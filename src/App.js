@@ -1,25 +1,36 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { Tabs } from 'antd';
+import ChatWithPDF from './ChatWithPDF';
+import ChatWithDB from './ChatWithDB';
+import ChatSummarization from './ChatSummarization';
+import ChatTopic from './ChatTopic';
+import ChatSemantic from './ChatSemantic';
 
-function App() {
+const { TabPane } = Tabs;
+
+const App = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div style={{ width: '100%', height: '100vh' }}>
+      <Tabs defaultActiveKey="1">
+        <TabPane tab="Chat with PDF" key="1">
+          <ChatWithPDF />
+        </TabPane>
+        <TabPane tab="Chat with DB" key="2">
+          <ChatWithDB />
+        </TabPane>
+        <TabPane tab="Chat Summarization" key="3">
+          <ChatSummarization />
+        </TabPane>
+        <TabPane tab="Chat Topic" key="4">
+          <ChatTopic />
+        </TabPane>
+        <TabPane tab="Chat Semantic" key="5">
+          <ChatSemantic />
+        </TabPane>
+      </Tabs>
     </div>
   );
-}
+};
 
 export default App;
+
