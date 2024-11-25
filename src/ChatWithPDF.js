@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Upload, Button, Radio, Input, Layout, List } from 'antd';
 import { UploadOutlined, SendOutlined } from '@ant-design/icons';
 
@@ -6,61 +6,79 @@ const { Sider, Content } = Layout;
 const { TextArea } = Input;
 
 const ChatWithPDF = () => {
-  // Handle file upload
-  const onUpload = (info) => {
-    console.log('Uploaded file:', info.file.name);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [showMore, setShowMore] = useState(false);
+
+  // Function to toggle showing more or fewer files
+  const toggleShowMore = () => {
+    setShowMore(!showMore);
   };
 
-  // Sample uploaded files (for display purposes)
-  const uploadedFiles = [
-    'Seq 1: Fintegrate Product Manual - Payments v7Current (1).pdf',
-    'Seq 2: Invitation-Letter.pdf'
-  ];
+  // Handle file upload
+  const onUpload = (info) => {
+    const file = info.file.originFileObj;
+    if (file && !uploadedFiles.some(f => f.name === file.name)) {
+      setUploadedFiles([...uploadedFiles, { name: file.name }]);
+    }
+  };
+
+  // Determine which files to display
+  const visibleFiles = showMore ? uploadedFiles : uploadedFiles.slice(0, 3);
 
   return (
-    <Layout style={{ minHeight: '80vh', background: '#f0f2f5' }}>
-      {/* Left Panel for File Uploads */}
-      <Sider width={300} style={{ background: '#1e1e1e', padding: '16px', color: '#fff' }}>
-        <h3 style={{ color: '#fff' }}>Upload Additional Documents</h3>
-        <Upload.Dragger 
-          multiple 
-          onChange={onUpload} 
-          style={{ backgroundColor: '#2e2e2e', padding: '20px', marginBottom: '20px' }}
+    <Layout className="chat-layout">
+      {/* Upload Section */}
+      <Sider width={300} className="sider">
+        <h3 style={{color:'white'}}>Upload Additional Documents</h3>
+        <Upload.Dragger
+          multiple
+          onChange={onUpload}
+          showUploadList={false}
+          className="upload-dragger"
         >
-          <p className="ant-upload-drag-icon">
-            <UploadOutlined style={{ color: '#fff', fontSize: '24px' }} />
+          <p style={{color:'white'}} className="upload-icon">
+            <UploadOutlined />
           </p>
-          <p style={{ color: '#fff' }}>Drag and drop files here or click to upload</p>
+          <p style={{color:'white'}}>Drag and drop file here</p>
+          <Button >Browse files</Button>
         </Upload.Dragger>
 
+        {/* Display uploaded files */}
         <List
-          header={<div style={{ color: '#fff', borderBottom: '1px solid #444' }}>Uploaded Files</div>}
-          dataSource={uploadedFiles}
-          renderItem={item => <List.Item style={{ color: '#fff', borderBottom: '1px solid #444' }}>{item}</List.Item>}
-          style={{ background: '#1e1e1e', borderRadius: '5px' }}
+          header={<div style={{fontWeight:'bold'}}>Uploaded Files</div>}
+          dataSource={visibleFiles}
+          renderItem={(item) => (
+            <List.Item className="file-list-item">
+              {item.name}
+            </List.Item>
+          )}
+          className="file-list"
+          locale={{ emptyText: 'No files uploaded yet' }}
         />
+
+        {/* Show More/Show Less button */}
+        {uploadedFiles.length > 3 && (
+          <Button type="link" onClick={toggleShowMore} className="show-more-button">
+            {showMore ? 'Show Less' : 'Show More'}
+          </Button>
+        )}
       </Sider>
 
-      {/* Chat Content */}
-      <Content style={{ padding: '20px', background: '#fff' }}>
-        {/* Language Selector */}
-        <Radio.Group defaultValue="English" style={{ marginBottom: '20px' }}>
+      {/* Chat Section */}
+      <Content className="chat-content">
+        <h1 className="chat-title">NASP Chatbot</h1>
+        <p className="language-label">Select Language / Выберите язык / Tilni tanlang</p>
+        <Radio.Group defaultValue="English" className="language-selector">
           <Radio.Button value="English">English</Radio.Button>
           <Radio.Button value="Русский">Русский</Radio.Button>
           <Radio.Button value="O'zbek">O'zbek</Radio.Button>
         </Radio.Group>
 
-        {/* Chat Window */}
-        <div style={{ border: '1px solid #ccc', padding: '20px', height: '300px', overflowY: 'auto', marginBottom: '20px' }}>
-          <p>Welcome! How can I assist you?</p>
-        </div>
-
-        {/* Chat Input and Send Button */}
-        <TextArea placeholder="Type your message..." rows={3} />
+        <TextArea placeholder="What would you like to know?" rows={4} className="chat-input" />
         <Button 
           type="primary" 
           icon={<SendOutlined />} 
-          style={{ marginTop: '10px', float: 'right' }}
+          className="send-button"
         >
           Send
         </Button>
