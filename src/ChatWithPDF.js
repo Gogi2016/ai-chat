@@ -62,12 +62,11 @@ const ChatWithPDF = () => {
       <Content className="chat-content">
         <h1 className="chat-title">NASP Chatbot</h1>
         <p className="language-label">Select Language / Выберите язык / Tilni tanlang</p>
-        <Radio.Group defaultValue="English" className="language-selector">
-          <Radio.Button value="English">English</Radio.Button>
-          <Radio.Button value="Русский">Русский</Radio.Button>
-          <Radio.Button value="O'zbek">O'zbek</Radio.Button>
-        </Radio.Group>
-
+       
+          <Radio>English</Radio>
+          <Radio>Русский</Radio>
+          <Radio>O'zbek</Radio>
+      
         <TextArea placeholder="What would you like to know?" rows={4} className="chat-input" />
         <Button 
           type="primary" 
