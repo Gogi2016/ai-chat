@@ -7,6 +7,14 @@
   pointer-events: none;
 }
 
+/* Global Styles */
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
@@ -37,13 +45,8 @@
   }
 }
 
-/* Global Styles */
-body {
-  font-family: 'Arial', sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #f5f5f5;
-}
+
+/* ChatWithPDF styles */
 
 /* Layout */
 .chat-layout {
@@ -185,4 +188,97 @@ body {
   .send-button {
     font-size: 14px;
   }
+}
+
+
+
+/* ChatWithDB-specific styles */
+/* Chat Section */
+.chat-content {
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  padding: 40px;
+  overflow-y: auto;
+}
+
+.chat-box {
+  flex-grow: 4;
+  margin-bottom: 20px;
+  overflow-y: auto;
+  max-height: 60vh; /* Set a max-height for chat box */
+}
+
+.chat-history {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Ensure flexbox layout for individual messages */
+.chat-message {
+  display: flex;
+  margin-bottom: 10px;
+  justify-content: flex-start; /* Align items to the left by default */
+  width: 100%;  /* Ensure full width for the message container */
+}
+
+/* Query and Response Text Styling */
+.query-text,
+.response-text {
+  padding: 10px 15px;
+  border-radius: 10px;
+  max-width: 60%;
+  word-wrap: break-word;  /* Ensure long words wrap properly */
+}
+
+/* Query Text (User Input) on the right */
+.query-text {
+  background-color: #1890ff; /* Bluish background */
+  color: white;
+  text-align: right;
+  align-self: flex-end; /* Align query text to the right */
+  margin-left: auto; /* Push the query to the right */
+}
+
+/* Response Text (Bot Response) on the left */
+.response-text {
+  background-color: #f0f0f0; /* Greyish background */
+  color: #333;
+  text-align: left;
+  align-self: flex-start; /* Align response text to the left */
+}
+
+/* Suggested Questions */
+.suggested-question-item {
+  cursor: pointer;
+  background-color: #e6f7ff;
+  margin: 5px 0;
+}
+
+.suggested-question-item:hover {
+  background-color: #bae7ff;
+}
+
+/* TextArea container */
+.text-area-container {
+  position: relative;
+  margin-top: 10px;
+}
+
+.text-area-container .chat-input {
+  width: 100%;
+  padding-right: 50px; /* Ensure space for the send button */
+}
+
+.text-area-container .send-button {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  font-size: 20px;
+  color: #1890ff;
+}
+
+.text-area-container .send-button:hover {
+  background-color: #e6f7ff;
 }
