@@ -26,51 +26,60 @@ const ChatWithPDF = () => {
   return (
     <Layout className="chat-layout">
       <Sider width={300} className="upload-sider">
-        <h3 className="upload-header">Upload Additional Documents</h3>
-        <Upload.Dragger
-          multiple
-          onChange={onUpload}
-          showUploadList={false}
-          className="upload-dragger"
-        >
-          <div className="upload-info">
-            <UploadOutlined className="upload-icon" />
-            <p>Drag and drop file here</p>
-            <Button className="browse-button">Browse files</Button>
-          </div>
-        </Upload.Dragger>
+        {/* Upload Section */}
+        <div className="upload-section">
+          <h3 className="upload-header">Upload Additional Documents</h3>
+          <p>Upload PDF, DOCX, or TXT files</p>
+          <Upload.Dragger
+            multiple
+            onChange={onUpload}
+            showUploadList={false}
+            className="upload-dragger"
+          >
+            <div className="upload-info">
+              <UploadOutlined className="upload-icon" />
+              <p>Drag and drop file here</p>
+              <Button className="browse-button">Browse files</Button>
+            </div>
+          </Upload.Dragger>
+        </div>
 
-        <List
-          header={<div className="file-list-header">Uploaded Files</div>}
-          dataSource={visibleFiles}
-          renderItem={(item) => (
-            <List.Item className="file-list-item">
-              {item.name}
-            </List.Item>
+        {/* Uploaded Files Section */}
+        <div className="uploaded-files-section">
+          <List
+            header={<div className="file-list-header">Uploaded Files</div>}
+            dataSource={visibleFiles}
+            renderItem={(item) => (
+              <List.Item className="file-list-item">
+                {item.name}
+              </List.Item>
+            )}
+            className="file-list"
+            locale={{ emptyText: 'No files uploaded yet' }}
+          />
+          {uploadedFiles.length > 3 && (
+            <Button type="link" onClick={toggleShowMore} className="show-more-button">
+              {showMore ? 'Show Less' : 'Show More'}
+            </Button>
           )}
-          className="file-list"
-          locale={{ emptyText: 'No files uploaded yet' }}
-        />
-
-        {uploadedFiles.length > 3 && (
-          <Button type="link" onClick={toggleShowMore} className="show-more-button">
-            {showMore ? 'Show Less' : 'Show More'}
-          </Button>
-        )}
+        </div>
       </Sider>
 
+      {/* Chat Content Section */}
       <Content className="chat-content">
         <h1 className="chat-title">NASP Chatbot</h1>
         <p className="language-label">Select Language / Выберите язык / Tilni tanlang</p>
-       
-          <Radio>English</Radio>
-          <Radio>Русский</Radio>
-          <Radio>O'zbek</Radio>
-      
+
+        <Radio.Group>
+          <Radio value="english">English</Radio>
+          <Radio value="russian">Русский</Radio>
+          <Radio value="uzbek">O'zbek</Radio>
+        </Radio.Group>
+
         <TextArea placeholder="What would you like to know?" rows={4} className="chat-input" />
-        <Button 
-          type="primary" 
-          icon={<SendOutlined />} 
+        <Button
+          type="primary"
+          icon={<SendOutlined />}
           className="send-button"
         >
           Send

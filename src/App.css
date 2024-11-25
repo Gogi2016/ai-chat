@@ -55,7 +55,7 @@ body {
   background-color: #1e1e1e;
   padding: 20px;
   color: white;
-  height: 300px;
+  height: 40%;
 }
 
 .chat-content {
@@ -66,6 +66,10 @@ body {
 }
 
 /* Upload Section */
+.upload-section {
+  margin-bottom: 70px;
+}
+
 .upload-header {
   font-size: 18px;
   margin-bottom: 20px;
@@ -74,7 +78,6 @@ body {
 
 .upload-dragger {
   background-color: #333;
-  border: 2px dashed #bbb;
   text-align: center;
   color: white;
   border-radius: 10px;
@@ -94,6 +97,11 @@ body {
   background-color: #1890ff;
   color: white;
   border: none;
+}
+
+/* Uploaded Files Section */
+.uploaded-files-section {
+  margin-top: 30px;
 }
 
 .file-list-header {
@@ -126,10 +134,6 @@ body {
   font-size: 16px;
   color: #888;
   margin-bottom: 10px;
-}
-
-.language-selector .ant-radio-button-wrapper {
-  margin-right: 20px; /* Adjust as needed */
 }
 
 .chat-input {
