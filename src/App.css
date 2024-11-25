@@ -136,19 +136,26 @@ body {
   margin-bottom: 10px;
 }
 
+.chat-input-container {
+  position: relative;
+  margin-top: 16px; /* Adjust margin as needed */
+}
+
 .chat-input {
   width: 100%;
-  margin-bottom: 20px;
-  margin-top: 20px;
+  padding-right: 50px; /* Make space for the button */
 }
 
 .send-button {
-  width: 20%;
-  font-size: 16px;
-  background-color: #1890ff;
-  color: white;
-  border: none;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  color: black; /* Set icon color */
+  background: none; /* No background color */
+  border: none; /* Remove border */
+  font-size: 20px; /* Adjust icon size */
 }
+
 
 .send-button:hover {
   background-color: #40a9ff;

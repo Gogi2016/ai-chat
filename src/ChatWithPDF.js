@@ -82,14 +82,15 @@ const ChatWithPDF = () => {
           <Radio value="uzbek">O'zbek</Radio>
         </Radio.Group>
 
-        <TextArea placeholder="What would you like to know?" rows={4} className="chat-input" />
-        <Button
-          type="primary"
-          icon={<SendOutlined />}
-          className="send-button"
-        >
-          Send
-        </Button>
+        {/* TextArea and Send Button Container */}
+        <div className="chat-input-container">
+          <TextArea placeholder="What would you like to know?" rows={4} className="chat-input" />
+          <Button
+            type="text"  // No background
+            icon={<SendOutlined />}
+            className="send-button"
+          />
+        </div>
       </Content>
     </Layout>
   );
