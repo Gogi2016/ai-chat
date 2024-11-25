@@ -9,6 +9,7 @@ const { TextArea } = Input;
 const ChatWithPDF = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showMore, setShowMore] = useState(false);
+  const [language, setLanguage] = useState('english'); // State for managing selected language
 
   const toggleShowMore = () => {
     setShowMore(!showMore);
@@ -22,6 +23,10 @@ const ChatWithPDF = () => {
   };
 
   const visibleFiles = showMore ? uploadedFiles : uploadedFiles.slice(0, 3);
+
+  const handleLanguageChange = (e) => {
+    setLanguage(e.target.value); // Update state when a new language is selected
+  };
 
   return (
     <Layout className="chat-layout">
@@ -70,7 +75,8 @@ const ChatWithPDF = () => {
         <h1 className="chat-title">NASP Chatbot</h1>
         <p className="language-label">Select Language / Выберите язык / Tilni tanlang</p>
 
-        <Radio.Group>
+        {/* Radio buttons for language selection */}
+        <Radio.Group onChange={handleLanguageChange} value={language}>
           <Radio value="english">English</Radio>
           <Radio value="russian">Русский</Radio>
           <Radio value="uzbek">O'zbek</Radio>
