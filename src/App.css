@@ -250,11 +250,27 @@ body {
 }
 
 /* Suggested Questions */
+.suggested-questions {
+  display: flex;                /* Enables flex layout */
+  flex-wrap: wrap;              /* Allow wrapping of items */
+  justify-content: space-between;  /* Ensures space between items */
+  gap: 20px;                    /* Adds gap between items */
+  margin: 10px 0;             /* Adds vertical margin for spacing */
+}
+
+/* Styling for individual suggested question items */
 .suggested-question-item {
   cursor: pointer;
-  background-color: #e6f7ff;
-  margin: 5px 0;
+  background-color: #e6f7ff;   /* Initial background color */
+  padding: 10px 15px;           /* Padding for spacing inside each item */
+  border-radius: 5px;           /* Optional: For rounded corners */
+  display: inline-flex;         /* Ensures items are inline */
+  max-width: 200px;             /* Prevents items from getting too wide */
+  text-align: center;           /* Centers text inside the item */
+  transition: background-color 0.3s;  /* Smooth transition for background color */
+  margin-right: 10px; 
 }
+
 
 .suggested-question-item:hover {
   background-color: #bae7ff;

@@ -104,20 +104,19 @@ const ChatWithDB = () => {
 
         {/* Suggested Questions */}
         <div className="suggested-questions">
-          <h3>Suggested Questions:</h3>
-          <List
-            dataSource={suggestedQuestions}
-            renderItem={(item) => (
-              <List.Item
-                key={item}
-                onClick={() => handleSend(item)}  // Send question on click
-                className="suggested-question-item"
-              >
-                {item}
-              </List.Item>
-            )}
-          />
+    <h3>Suggested Questions:</h3>
+    <div className="flex-container">
+      {suggestedQuestions.map((item, index) => (
+        <div
+          key={index}
+          className="suggested-question-item"
+          onClick={() => handleSend(item)}  // Send question on click
+        >
+          {item}
         </div>
+      ))}
+    </div>
+  </div>
 
         {/* TextArea with Send Button */}
         <div className="text-area-container">
