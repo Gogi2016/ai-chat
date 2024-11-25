@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, Button, Radio, Input, Layout, List } from 'antd';
 import { UploadOutlined, SendOutlined } from '@ant-design/icons';
+import './App.css';
 
 const { Sider, Content } = Layout;
 const { TextArea } = Input;
@@ -9,12 +10,10 @@ const ChatWithPDF = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showMore, setShowMore] = useState(false);
 
-  // Function to toggle showing more or fewer files
   const toggleShowMore = () => {
     setShowMore(!showMore);
   };
 
-  // Handle file upload
   const onUpload = (info) => {
     const file = info.file.originFileObj;
     if (file && !uploadedFiles.some(f => f.name === file.name)) {
@@ -22,30 +21,27 @@ const ChatWithPDF = () => {
     }
   };
 
-  // Determine which files to display
   const visibleFiles = showMore ? uploadedFiles : uploadedFiles.slice(0, 3);
 
   return (
     <Layout className="chat-layout">
-      {/* Upload Section */}
-      <Sider width={300} className="sider">
-        <h3 style={{color:'white'}}>Upload Additional Documents</h3>
+      <Sider width={300} className="upload-sider">
+        <h3 className="upload-header">Upload Additional Documents</h3>
         <Upload.Dragger
           multiple
           onChange={onUpload}
           showUploadList={false}
           className="upload-dragger"
         >
-          <p style={{color:'white'}} className="upload-icon">
-            <UploadOutlined />
-          </p>
-          <p style={{color:'white'}}>Drag and drop file here</p>
-          <Button >Browse files</Button>
+          <div className="upload-info">
+            <UploadOutlined className="upload-icon" />
+            <p>Drag and drop file here</p>
+            <Button className="browse-button">Browse files</Button>
+          </div>
         </Upload.Dragger>
 
-        {/* Display uploaded files */}
         <List
-          header={<div style={{fontWeight:'bold'}}>Uploaded Files</div>}
+          header={<div className="file-list-header">Uploaded Files</div>}
           dataSource={visibleFiles}
           renderItem={(item) => (
             <List.Item className="file-list-item">
@@ -56,7 +52,6 @@ const ChatWithPDF = () => {
           locale={{ emptyText: 'No files uploaded yet' }}
         />
 
-        {/* Show More/Show Less button */}
         {uploadedFiles.length > 3 && (
           <Button type="link" onClick={toggleShowMore} className="show-more-button">
             {showMore ? 'Show Less' : 'Show More'}
@@ -64,7 +59,6 @@ const ChatWithPDF = () => {
         )}
       </Sider>
 
-      {/* Chat Section */}
       <Content className="chat-content">
         <h1 className="chat-title">NASP Chatbot</h1>
         <p className="language-label">Select Language / Выберите язык / Tilni tanlang</p>

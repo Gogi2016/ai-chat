@@ -5,6 +5,7 @@ import ChatWithDB from './ChatWithDB';
 import ChatSummarization from './ChatSummarization';
 import ChatTopic from './ChatTopic';
 import ChatSemantic from './ChatSemantic';
+import './App.css';
 
 const { TabPane } = Tabs;
 
