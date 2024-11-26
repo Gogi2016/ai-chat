@@ -3,8 +3,6 @@ import { Tabs } from 'antd';
 import NASP_PDFChatbot from './NASP_PDFChatbot';
 import MalawiInfrastructureProjectsChatbot from './MalawiInfrastructureProjectsChatbot';
 import Summarization from './Summarization';
-import ChatTopic from './TopicAnalysis';
-import ChatSemantic from './SematicAnalysis';
 import './App.css';
 
 const { TabPane } = Tabs;
@@ -21,12 +19,6 @@ const App = () => {
         </TabPane>
         <TabPane tab="Summarization" key="3">
           <Summarization />
-        </TabPane>
-        <TabPane tab="Topic Analysis" key="4">
-          <ChatTopic />
-        </TabPane>
-        <TabPane tab="Semantic Analysis" key="5">
-          <ChatSemantic />
         </TabPane>
       </Tabs>
     </div>
