@@ -10,8 +10,8 @@ const Summarization = () => {
 
   return (
     <div className="container">
-      <Title level={1}>Together AI Web Interface</Title>
-      <Text className="subtitle">Select a use case, input your query, and see the results!</Text>
+       <h1 className="chat-title">Together AI Web Interface</h1>
+      <Text className="language-label">Select a use case, input your query, and see the results!</Text>
 
      
       <div className="section">
