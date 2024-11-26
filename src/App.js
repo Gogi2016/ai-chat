@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'antd';
 import NASP_PDFChatbot from './NASP_PDFChatbot';
 import MalawiInfrastructureProjectsChatbot from './MalawiInfrastructureProjectsChatbot';
-import ChatSummarization from './ChatSummarization';
+import Summarization from './Summarization';
 import ChatTopic from './ChatTopic';
 import ChatSemantic from './ChatSemantic';
 import './App.css';
@@ -19,8 +19,8 @@ const App = () => {
         <TabPane tab="Malawi Infrastructure Projects Chatbot" key="2">
           <MalawiInfrastructureProjectsChatbot />
         </TabPane>
-        <TabPane tab="Chat Summarization" key="3">
-          <ChatSummarization />
+        <TabPane tab="Summarization" key="3">
+          <Summarization />
         </TabPane>
         <TabPane tab="Chat Topic" key="4">
           <ChatTopic />

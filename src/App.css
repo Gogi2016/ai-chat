@@ -46,7 +46,7 @@ body {
 }
 
 
-/* ChatWithPDF styles */
+/* NASP PDF styles */
 
 /* Layout */
 .chat-layout {
@@ -145,8 +145,10 @@ body {
 }
 
 .chat-input {
-  width: 100%;
-  padding-right: 50px; 
+  margin-top: 10px;
+  background-color: #f7f8fa;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
 }
 
 .send-button {
@@ -192,7 +194,7 @@ body {
 
 
 
-/* ChatWithDB-specific styles */
+/* Malawa Infrustructure Project styles */
 /* Chat Section */
 .chat-content {
   display: flex;
@@ -298,3 +300,45 @@ body {
 .text-area-container .send-button:hover {
   background-color: #e6f7ff;
 }
+
+/* Summarization styles */
+/* Container styling */
+.container {
+  max-width: 600px;
+  margin: 40px auto;
+  text-align: center;
+}
+
+/* Subtitle */
+.subtitle {
+  color: #888;
+  font-size: 16px;
+}
+
+/* Section styling */
+.section {
+  margin-top: 30px;
+  text-align: left;
+}
+
+/* Radio buttons */
+.radio-group .ant-radio-wrapper {
+  font-size: 16px;
+}
+
+.radio-group-container {
+  margin-top: 10px;
+}
+
+.system-prompt-label {
+  display: block;
+  margin-top: 20px;
+}
+
+/* Run button */
+.run-button {
+  display: block;
+  width: 10%;
+  margin-top: 10px;
+}
+
