@@ -141,22 +141,22 @@ body {
 
 .chat-input-container {
   position: relative;
-  margin-top: 16px; /* Adjust margin as needed */
+  margin-top: 16px;
 }
 
 .chat-input {
   width: 100%;
-  padding-right: 50px; /* Make space for the button */
+  padding-right: 50px; 
 }
 
 .send-button {
   position: absolute;
   right: 10px;
   bottom: 10px;
-  color: black; /* Set icon color */
-  background: none; /* No background color */
-  border: none; /* Remove border */
-  font-size: 20px; /* Adjust icon size */
+  color: black; 
+  background: none;
+  border: none; 
+  font-size: 20px; 
 }
 
 
@@ -206,7 +206,7 @@ body {
   flex-grow: 4;
   margin-bottom: 20px;
   overflow-y: auto;
-  max-height: 60vh; /* Set a max-height for chat box */
+  max-height: 60vh; 
 }
 
 .chat-history {
@@ -219,8 +219,8 @@ body {
 .chat-message {
   display: flex;
   margin-bottom: 10px;
-  justify-content: flex-start; /* Align items to the left by default */
-  width: 100%;  /* Ensure full width for the message container */
+  justify-content: flex-start; 
+  width: 100%; 
 }
 
 /* Query and Response Text Styling */
@@ -229,45 +229,45 @@ body {
   padding: 10px 15px;
   border-radius: 10px;
   max-width: 60%;
-  word-wrap: break-word;  /* Ensure long words wrap properly */
+  word-wrap: break-word;
 }
 
 /* Query Text (User Input) on the right */
 .query-text {
-  background-color: #1890ff; /* Bluish background */
+  background-color: #1890ff;
   color: white;
   text-align: right;
-  align-self: flex-end; /* Align query text to the right */
-  margin-left: auto; /* Push the query to the right */
+  align-self: flex-end; 
+  margin-left: auto; 
 }
 
 /* Response Text (Bot Response) on the left */
 .response-text {
-  background-color: #f0f0f0; /* Greyish background */
+  background-color: #f0f0f0; 
   color: #333;
   text-align: left;
-  align-self: flex-start; /* Align response text to the left */
+  align-self: flex-start;
 }
 
 /* Suggested Questions */
 .suggested-questions {
-  display: flex;                /* Enables flex layout */
-  flex-wrap: wrap;              /* Allow wrapping of items */
-  justify-content: space-between;  /* Ensures space between items */
-  gap: 20px;                    /* Adds gap between items */
-  margin: 10px 0;             /* Adds vertical margin for spacing */
+  display: flex;               
+  flex-wrap: wrap;              
+  justify-content: space-between; 
+  gap: 20px;                  
+  margin: 10px 0;         
 }
 
 /* Styling for individual suggested question items */
 .suggested-question-item {
   cursor: pointer;
-  background-color: #e6f7ff;   /* Initial background color */
-  padding: 10px 15px;           /* Padding for spacing inside each item */
-  border-radius: 5px;           /* Optional: For rounded corners */
-  display: inline-flex;         /* Ensures items are inline */
-  max-width: 200px;             /* Prevents items from getting too wide */
-  text-align: center;           /* Centers text inside the item */
-  transition: background-color 0.3s;  /* Smooth transition for background color */
+  background-color: #e6f7ff;  
+  padding: 10px 15px;          
+  border-radius: 5px;       
+  display: inline-flex;        
+  max-width: 200px;             
+  text-align: center;          
+  transition: background-color 0.3s;
   margin-right: 10px; 
 }
 
@@ -284,7 +284,7 @@ body {
 
 .text-area-container .chat-input {
   width: 100%;
-  padding-right: 50px; /* Ensure space for the send button */
+  padding-right: 50px; 
 }
 
 .text-area-container .send-button {
