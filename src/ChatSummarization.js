@@ -1,13 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Typography, Radio, Input, Button, Space } from 'antd';
+import './App.css';
+
+const { Title, Text } = Typography;
+const { TextArea } = Input;
 
 const ChatSummarization = () => {
-  return (
-    <div>
-      <h3>Chat Summarization</h3>
-      <p>This tab will allow the summarization of the chat contents.</p>
-    </div>
-  );
-};
+  const [selectedUseCase, setSelectedUseCase] = useState('Topic Analysis');
 
 export default ChatSummarization;
