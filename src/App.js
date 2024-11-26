@@ -3,8 +3,8 @@ import { Tabs } from 'antd';
 import NASP_PDFChatbot from './NASP_PDFChatbot';
 import MalawiInfrastructureProjectsChatbot from './MalawiInfrastructureProjectsChatbot';
 import Summarization from './Summarization';
-import ChatTopic from './ChatTopic';
-import ChatSemantic from './ChatSemantic';
+import ChatTopic from './TopicAnalysis';
+import ChatSemantic from './SematicAnalysis';
 import './App.css';
 
 const { TabPane } = Tabs;
