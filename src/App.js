@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'antd';
-import ChatWithPDF from './ChatWithPDF';
-import ChatWithDB from './ChatWithDB';
+import NASP_PDFChatbot from './NASP_PDFChatbot';
+import MalawiInfrastructureProjectsChatbot from './MalawiInfrastructureProjectsChatbot';
 import ChatSummarization from './ChatSummarization';
 import ChatTopic from './ChatTopic';
 import ChatSemantic from './ChatSemantic';
@@ -13,11 +13,11 @@ const App = () => {
   return (
     <div style={{ width: '100%', height: '100vh' }}>
       <Tabs defaultActiveKey="1">
-        <TabPane tab="Chat with PDF" key="1">
-          <ChatWithPDF />
+        <TabPane tab="NASP PDF Chatbot" key="1">
+          <NASP_PDFChatbot />
         </TabPane>
-        <TabPane tab="Chat with DB" key="2">
-          <ChatWithDB />
+        <TabPane tab="Malawi Infrastructure Projects Chatbot" key="2">
+          <MalawiInfrastructureProjectsChatbot />
         </TabPane>
         <TabPane tab="Chat Summarization" key="3">
           <ChatSummarization />

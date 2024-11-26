@@ -7,7 +7,7 @@ const { Content } = Layout;
 const { TextArea } = Input;
 const { Option } = Select;
 
-const ChatWithDB = () => {
+const MalawiInfrastructureProjectsChatbot = () => {
   const [language, setLanguage] = useState('english'); // Language selection state
   const [input, setInput] = useState(''); // User input state
   const [chatHistory, setChatHistory] = useState([]); // Chat history state
@@ -139,4 +139,4 @@ const ChatWithDB = () => {
   );
 };
 
-export default ChatWithDB;
+export default MalawiInfrastructureProjectsChatbot;

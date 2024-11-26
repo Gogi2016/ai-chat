@@ -6,7 +6,7 @@ import './App.css';
 const { Sider, Content } = Layout;
 const { TextArea } = Input;
 
-const ChatWithPDF = () => {
+const NASP_PDFChatbot = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showMore, setShowMore] = useState(false);
   const [language, setLanguage] = useState('english'); // State for managing selected language
@@ -96,4 +96,4 @@ const ChatWithPDF = () => {
   );
 };
 
-export default ChatWithPDF;
+export default NASP_PDFChatbot;
