@@ -7,34 +7,26 @@ const { TextArea } = Input;
 
 const Summarization = () => {
   const [selectedUseCase, setSelectedUseCase] = useState('Summarization');  // Default to 'Summarization'
+  const [systemPrompt, setSystemPrompt] = useState('You are an assistant specialized in summarizing texts. Provide concise summaries for the given input.'); // Default system prompt
 
-  // Function to render content based on the selected use case
-  const renderContent = () => {
-    switch (selectedUseCase) {
+  // Function to update system prompt based on the selected use case
+  const handleUseCaseChange = (e) => {
+    const selectedValue = e.target.value;
+    setSelectedUseCase(selectedValue);
+
+    // Update system prompt text based on the selected use case
+    switch (selectedValue) {
       case 'Summarization':
-        return (
-          <div>
-            <Title level={3}>Enter Prompts</Title>
-            <Text>User Prompt</Text>
-            <TextArea placeholder="Enter your query here..." rows={4} className="chat-input" />
-          </div>
-        );
+        setSystemPrompt('You are an assistant specialized in summarizing texts. Provide concise summaries for the given input.');
+        break;
       case 'Topic Analysis':
-        return (
-          <div>
-            <Title level={3}>Enter Prompts</Title>
-            <Text>User Prompt</Text>
-            <TextArea placeholder="Enter your query here..." rows={4} className="chat-input" />
-          </div>
-        );
+        setSystemPrompt('You are an assistant that analyzes texts to identify key topics. Extract and list the main topics from the input.');
+        break;
       case 'Sentiment Analysis':
-        return (
-          <div>
-            <Title level={3}>Enter Prompt</Title>
-            <Text>User Prompt</Text>
-            <TextArea placeholder="Enter your query here..." rows={4} className="chat-input" />
-          </div>
-        );
+        setSystemPrompt('You are an assistant skilled in sentiment analysis. Determine whether the sentiment of the input is positive, negative, or neutral.');
+        break;
+      default:
+        setSystemPrompt('');
     }
   };
 
@@ -49,7 +41,7 @@ const Summarization = () => {
         <Text>Choose one of the use cases:</Text>
         <div className="radio-group-container">
           <Radio.Group
-            onChange={(e) => setSelectedUseCase(e.target.value)}
+            onChange={handleUseCaseChange} // Handle radio button changes
             value={selectedUseCase}
             className="radio-group"
           >
@@ -64,12 +56,20 @@ const Summarization = () => {
 
       {/* Render the content based on the selected use case */}
       <div className="section">
-        {renderContent()}
+        <Title level={3}>Enter Prompts</Title>
+        <Text>User Prompt</Text>
+        <TextArea 
+          placeholder="Enter your query here..." 
+          rows={4} 
+          className="chat-input"
+        />
 
-        {/* System Prompt and Run Button */}
+        {/* Editable System Prompt and Run Button */}
         <Text className="system-prompt-label">System Prompt</Text>
         <TextArea 
-          placeholder="Provide instructions to the AI (optional)" 
+          value={systemPrompt} // Display the dynamic system prompt
+          onChange={(e) => setSystemPrompt(e.target.value)} // Update the system prompt dynamically
+          placeholder="Provide instructions to the AI (optional)..." 
           rows={4} 
           className="chat-input"
         />

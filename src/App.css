@@ -205,10 +205,12 @@ body {
 }
 
 .chat-box {
-  flex-grow: 4;
-  margin-bottom: 20px;
+  flex-grow: 1;
   overflow-y: auto;
-  max-height: 60vh; 
+  padding: 5px;
+  background-color: white;
+  border-radius: 5px;
+  border: 1px solid #e6e6e6;
 }
 
 .chat-history {
@@ -220,9 +222,19 @@ body {
 /* Ensure flexbox layout for individual messages */
 .chat-message {
   display: flex;
-  margin-bottom: 10px;
   justify-content: flex-start; 
   width: 100%; 
+}
+
+.combined-container {
+  display: flex;
+  flex-direction: column;
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  height: 100vh; 
+  overflow: hidden;
 }
 
 /* Query and Response Text Styling */

@@ -19,12 +19,9 @@ const MalawiInfrastructureProjectsChatbot = () => {
   };
 
   const handleSend = (question) => {
-    const userQuery = question || input;  // Use the clicked question or typed input
+    const userQuery = question || input;
     if (userQuery.trim()) {
-      // Add user query to chat history
       setChatHistory((prevHistory) => [...prevHistory, { type: 'query', text: userQuery }]);
-      
-      // Show typing animation for bot response
       setIsTyping(true);
 
       // Simulate fetching a dynamic response (replace with API call if needed)
@@ -34,8 +31,8 @@ const MalawiInfrastructureProjectsChatbot = () => {
         // Add bot response to chat history
         setChatHistory((prevHistory) => [...prevHistory, { type: 'response', text: mockResponse }]);
 
-        setIsTyping(false); // Hide typing animation
-        setInput(''); // Clear input field
+        setIsTyping(false);
+        setInput(''); 
       }, 1500); // Simulate network delay
     }
   };
@@ -66,8 +63,8 @@ const MalawiInfrastructureProjectsChatbot = () => {
       <Content className="chat-content">
         <h1 className="chat-title">Malawi Infrastructure Projects Chatbot</h1>
         <p className="language-label">Select Language</p>
-
-        {/* Language Selection with Dropdown */}
+  
+        {/* Language Selection Dropdown */}
         <Select
           value={language}
           onChange={handleLanguageChange}
@@ -78,61 +75,63 @@ const MalawiInfrastructureProjectsChatbot = () => {
           <Option value="tumbuka">Tumbuka</Option>
           <Option value="yao">Yao</Option>
         </Select>
-
-        {/* Chat Area */}
-        <div className="chat-box" ref={chatContainerRef}>
-          <List
-            dataSource={chatHistory}
-            renderItem={(item, index) => (
-              <List.Item key={index} className={item.type === 'query' ? 'query' : 'response'}>
-                <div className={item.type === 'query' ? 'query-text' : 'response-text'}>
-                  {item.text}
-                </div>
-              </List.Item>
+  
+        {/* Combined Chat Container */}
+        <div className="combined-container">
+          {/* Chat History */}
+          <div className="chat-box" ref={chatContainerRef}>
+            <List
+              dataSource={chatHistory}
+              renderItem={(item, index) => (
+                <List.Item key={index} className={item.type === 'query' ? 'query' : 'response'}>
+                  <div className={item.type === 'query' ? 'query-text' : 'response-text'}>
+                    {item.text}
+                  </div>
+                </List.Item>
+              )}
+              className="chat-history"
+            />
+            {/* Typing Indicator */}
+            {isTyping && (
+              <div className="typing-indicator">
+                <Spin size="small" />
+                <span>Typing...</span>
+              </div>
             )}
-            className="chat-history"
-          />
-          
-          {/* Show typing animation if bot is typing */}
-          {isTyping && (
-            <div className="typing-indicator">
-              <Spin size="small" />
-              <span>Typing...</span>
+          </div>
+  
+          {/* Suggested Questions */}
+          <div className="suggested-questions">
+            <h3>Suggested Questions:</h3>
+            <div className="flex-container">
+              {suggestedQuestions.map((item, index) => (
+                <div
+                  key={index}
+                  className="suggested-question-item"
+                  onClick={() => handleSend(item)}
+                >
+                  {item}
+                </div>
+              ))}
             </div>
-          )}
-        </div>
-
-        {/* Suggested Questions */}
-        <div className="suggested-questions">
-    <h3>Suggested Questions:</h3>
-    <div className="flex-container">
-      {suggestedQuestions.map((item, index) => (
-        <div
-          key={index}
-          className="suggested-question-item"
-          onClick={() => handleSend(item)}  // Send question on click
-        >
-          {item}
-        </div>
-      ))}
-    </div>
-  </div>
-
-        {/* TextArea with Send Button */}
-        <div className="text-area-container">
-          <TextArea
-            placeholder="Ask about infrastructure projects..."
-            rows={4}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            className="chat-input"
-          />
-          <Button
-            type="text"
-            icon={<SendOutlined />}
-            className="send-button"
-            onClick={() => handleSend()}  // Send input on button click
-          />
+          </div>
+  
+          {/* Text Area and Send Button */}
+          <div className="text-area-container">
+            <TextArea
+              placeholder="Ask about infrastructure projects..."
+              rows={4}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              className="chat-input"
+            />
+            <Button
+              type="text"
+              icon={<SendOutlined />}
+              className="send-button"
+              onClick={() => handleSend()}
+            />
+          </div>
         </div>
       </Content>
     </Layout>
