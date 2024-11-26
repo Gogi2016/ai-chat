@@ -22,10 +22,10 @@ const App = () => {
         <TabPane tab="Summarization" key="3">
           <Summarization />
         </TabPane>
-        <TabPane tab="Chat Topic" key="4">
+        <TabPane tab="Topic Analysis" key="4">
           <ChatTopic />
         </TabPane>
-        <TabPane tab="Chat Semantic" key="5">
+        <TabPane tab="Semantic Analysis" key="5">
           <ChatSemantic />
         </TabPane>
       </Tabs>
