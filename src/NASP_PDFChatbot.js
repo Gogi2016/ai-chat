@@ -29,6 +29,8 @@ const NASP_PDFChatbot = () => {
   };
 
   return (
+
+    <div className="combined-container">
     <Layout className="chat-layout">
       <Sider width={300} className="upload-sider">
         {/* Upload Section */}
@@ -92,7 +94,7 @@ const NASP_PDFChatbot = () => {
           />
         </div>
       </Content>
-    </Layout>
+    </Layout></div>
   );
 };
 
