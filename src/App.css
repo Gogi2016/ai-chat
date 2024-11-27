@@ -298,29 +298,6 @@ body {
 }
 
 
-/* TextArea container */
-.text-area-container {
-  position: relative;
-  margin-top: 10px;
-}
-
-.text-area-container .chat-input {
-  width: 100%;
-  padding-right: 50px; 
-}
-
-.text-area-container .send-button {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  font-size: 20px;
-  color: #1890ff;
-}
-
-.text-area-container .send-button:hover {
-  background-color: #e6f7ff;
-}
-
 /* Summarization styles */
 /* Container styling */
 .container {

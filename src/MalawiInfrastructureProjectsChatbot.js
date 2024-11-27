@@ -120,7 +120,7 @@ const MalawiInfrastructureProjectsChatbot = () => {
           </div>
   
           {/* Text Area and Send Button */}
-          <div className="text-area-container">
+          <div className="chat-input-container">
             <TextArea
               placeholder="Ask about infrastructure projects..."
               rows={4}
