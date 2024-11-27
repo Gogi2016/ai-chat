@@ -39,10 +39,13 @@ const MalawiInfrastructureProjectsChatbot = () => {
 
   // Mock function to simulate responses based on the query
   const generateResponse = (query) => {
-    if (query.includes("projects")) return "There are 20 infrastructure projects across Malawi.";
-    if (query.includes("sector")) return "The projects are categorized into Education, Transport, and Health sectors.";
-    if (query.includes("region")) return "Projects are distributed in Northern, Central, and Southern regions.";
-    return "Fetching the latest data. Please wait...";
+    const responses = {
+      "Show more projects": "Currently, there are 20 infrastructure projects in Malawi, focusing on key development areas.",
+      "Show projects by sector.": "The projects are categorized into three main sectors: Education, Transport, and Health.",
+      "Show projects by region": "The projects are distributed across Northern, Central, and Southern regions of Malawi."
+    };
+  
+    return responses[query] || "Fetching the latest data. Please wait...";
   };
 
   const suggestedQuestions = [
