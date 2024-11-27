@@ -40,7 +40,7 @@ const MalawiInfrastructureProjectsChatbot = () => {
   // Mock function to simulate responses based on the query
   const generateResponse = (query) => {
     const responses = {
-      "Show more projects": "Currently, there are 20 infrastructure projects in Malawi, focusing on key development areas.",
+      "Show more projects": "There are 20 infrastructure projects in Malawi, focusing on key development areas.",
       "Show projects by sector.": "The projects are categorized into three main sectors: Education, Transport, and Health.",
       "Show projects by region": "The projects are distributed across Northern, Central, and Southern regions of Malawi."
     };
