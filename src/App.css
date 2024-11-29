@@ -278,9 +278,9 @@ body {
 /* Flex container for question items */
 .flex-container {
   display: flex;
-  flex-wrap: wrap;          /* Allow wrapping if items overflow */
-  gap: 10px;                /* Space between items */
-  align-items: flex-start;  /* Align items with the start of the container */
+  flex-wrap: wrap;        
+  gap: 10px;
+  align-items: flex-start;
 }
 
 /* Styling for individual suggested question items */
