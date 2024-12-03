@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Upload, Button, Radio, Input, Layout, List } from 'antd';
 import { UploadOutlined, SendOutlined } from '@ant-design/icons';
 import './App.css';
+import { chatService } from './services/api';
 
 const { Sider, Content } = Layout;
 const { TextArea } = Input;
@@ -9,7 +10,9 @@ const { TextArea } = Input;
 const NASP_PDFChatbot = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showMore, setShowMore] = useState(false);
-  const [language, setLanguage] = useState('english'); // State for managing selected language
+  const [language, setLanguage] = useState('en'); // State for managing selected language
+  const [messages, setMessages] = useState([]);
+  const [inputText, setInputText] = useState('');
 
   const toggleShowMore = () => {
     setShowMore(!showMore);
@@ -26,6 +29,36 @@ const NASP_PDFChatbot = () => {
 
   const handleLanguageChange = (e) => {
     setLanguage(e.target.value); // Update state when a new language is selected
+  };
+
+  const handleInputChange = (e) => {
+    setInputText(e.target.value);
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputText.trim()) return;
+
+    try {
+      const response = await chatService.sendMessage(inputText, language);
+      setMessages(prev => [...prev, 
+        { type: 'user', content: inputText },
+        { type: 'bot', content: response.response }
+      ]);
+      setInputText('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  const handleFileUpload = async (info) => {
+    try {
+      const response = await chatService.uploadFile(info.file.originFileObj, language);
+      if (response.status === 'success') {
+        setUploadedFiles(prev => [...prev, { name: info.file.name }]);
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
   };
 
   return (
@@ -79,18 +112,34 @@ const NASP_PDFChatbot = () => {
 
         {/* Radio buttons for language selection */}
         <Radio.Group onChange={handleLanguageChange} value={language}>
-          <Radio value="english">English</Radio>
-          <Radio value="russian">Русский</Radio>
-          <Radio value="uzbek">O'zbek</Radio>
+          <Radio value="en">English</Radio>
+          <Radio value="ru">Русский</Radio>
+          <Radio value="uz">O'zbek</Radio>
         </Radio.Group>
 
-        {/* TextArea and Send Button Container */}
+        {/* Display messages */}
+        <div className="chat-messages">
+          {messages.map((msg, index) => (
+            <div key={index} className={`message ${msg.type}`}>
+              {msg.content}
+            </div>
+          ))}
+        </div>
+
+        {/* Update TextArea and Send Button */}
         <div className="chat-input-container">
-          <TextArea placeholder="What would you like to know?" rows={4} className="chat-input" />
+          <TextArea 
+            value={inputText}
+            onChange={handleInputChange}
+            placeholder="What would you like to know?" 
+            rows={4} 
+            className="chat-input" 
+          />
           <Button
-            type="text"  // No background
+            type="text"
             icon={<SendOutlined />}
             className="send-button"
+            onClick={handleSendMessage}
           />
         </div>
       </Content>
