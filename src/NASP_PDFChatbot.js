@@ -3,6 +3,7 @@ import { Upload, Button, Radio, Input, Layout, List, message } from 'antd';
 import { UploadOutlined, SendOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import './App.css';
+import { chatService } from './services/api';
 
 const { Sider, Content } = Layout;
 const { TextArea } = Input;
@@ -180,6 +181,7 @@ const NASP_PDFChatbot = () => {
             onPressEnter={handleSendMessage}
           />
           <Button
+            type="text"
             type="text"
             icon={<SendOutlined />}
             className="send-button"
