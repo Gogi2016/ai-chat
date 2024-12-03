@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Upload, Button, Radio, Input, Layout, List } from 'antd';
+import { Upload, Button, Radio, Input, Layout, List, message } from 'antd';
 import { UploadOutlined, SendOutlined } from '@ant-design/icons';
+import axios from 'axios';
 import './App.css';
 
 const { Sider, Content } = Layout;
@@ -9,27 +10,93 @@ const { TextArea } = Input;
 const NASP_PDFChatbot = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showMore, setShowMore] = useState(false);
-  const [language, setLanguage] = useState('english'); // State for managing selected language
+  const [language, setLanguage] = useState('English');
+  const [chatInput, setChatInput] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const toggleShowMore = () => {
     setShowMore(!showMore);
   };
 
-  const onUpload = (info) => {
-    const file = info.file.originFileObj;
-    if (file && !uploadedFiles.some(f => f.name === file.name)) {
-      setUploadedFiles([...uploadedFiles, { name: file.name }]);
+  const customUpload = async (info) => {
+    const file = info.file;
+    
+    // Create FormData to send file
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('language', language);
+
+    try {
+      const response = await axios.post('http://localhost:8000/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      message.success(`${file.name} uploaded successfully`);
+      setUploadedFiles(prevFiles => {
+        // Prevent duplicate files
+        if (!prevFiles.some(f => f.name === file.name)) {
+          return [...prevFiles, { name: file.name }];
+        }
+        return prevFiles;
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      message.error(`${file.name} upload failed: ${error.response?.data?.detail || error.message}`);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim()) return;
+
+    // Add user message to chat history
+    const userMessage = { sender: 'user', text: chatInput };
+    setChatHistory(prev => [...prev, userMessage]);
+    
+    // Clear input
+    setChatInput('');
+    
+    // Set loading state
+    setIsLoading(true);
+
+    try {
+      // Send message to backend
+      const response = await axios.post('http://localhost:8000/chat', {
+        message: chatInput,
+        language: language
+      });
+
+      // Add bot response to chat history
+      const botMessage = { 
+        sender: 'bot', 
+        text: response.data.response 
+      };
+      setChatHistory(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      message.error(`Failed to send message: ${error.response?.data?.detail || error.message}`);
+      
+      // Add error message to chat history
+      const errorMessage = { 
+        sender: 'system', 
+        text: 'Sorry, there was an error processing your message.' 
+      };
+      setChatHistory(prev => [...prev, errorMessage]);
+    } finally {
+      // Reset loading state
+      setIsLoading(false);
     }
   };
 
   const visibleFiles = showMore ? uploadedFiles : uploadedFiles.slice(0, 3);
 
   const handleLanguageChange = (e) => {
-    setLanguage(e.target.value); // Update state when a new language is selected
+    setLanguage(e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1));
   };
 
   return (
-
     <div className="combined-container">
     <Layout className="chat-layout">
       <Sider width={300} className="upload-sider">
@@ -38,10 +105,11 @@ const NASP_PDFChatbot = () => {
           <h3 className="upload-header">Upload Additional Documents</h3>
           <p>Upload PDF, DOCX, or TXT files</p>
           <Upload.Dragger
-            multiple
-            onChange={onUpload}
+            multiple={false}
+            customRequest={customUpload}
             showUploadList={false}
             className="upload-dragger"
+            accept=".pdf,.docx,.txt"
           >
             <div className="upload-info">
               <UploadOutlined className="upload-icon" />
@@ -78,23 +146,50 @@ const NASP_PDFChatbot = () => {
         <p className="language-label">Select Language / Выберите язык / Tilni tanlang</p>
 
         {/* Radio buttons for language selection */}
-        <Radio.Group onChange={handleLanguageChange} value={language}>
+        <Radio.Group onChange={handleLanguageChange} value={language.toLowerCase()}>
           <Radio value="english">English</Radio>
           <Radio value="russian">Русский</Radio>
           <Radio value="uzbek">O'zbek</Radio>
         </Radio.Group>
 
+        {/* Chat History */}
+        <div className="chat-history">
+          {chatHistory.map((message, index) => (
+            <div 
+              key={index} 
+              className={`chat-message ${message.sender}`}
+            >
+              {message.text}
+            </div>
+          ))}
+          {isLoading && (
+            <div className="chat-message bot loading">
+              Typing...
+            </div>
+          )}
+        </div>
+
         {/* TextArea and Send Button Container */}
         <div className="chat-input-container">
-          <TextArea placeholder="What would you like to know?" rows={4} className="chat-input" />
+          <TextArea 
+            placeholder="What would you like to know?" 
+            rows={4} 
+            className="chat-input"
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onPressEnter={handleSendMessage}
+          />
           <Button
-            type="text"  // No background
+            type="text"
             icon={<SendOutlined />}
             className="send-button"
+            onClick={handleSendMessage}
+            loading={isLoading}
           />
         </div>
       </Content>
-    </Layout></div>
+    </Layout>
+    </div>
   );
 };
 

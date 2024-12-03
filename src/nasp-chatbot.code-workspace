@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "../../nasp-chatbot"
+		},
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true
+	}
+}
