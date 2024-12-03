@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Upload, Button, Radio, Input, Layout, List } from 'antd';
+import { Upload, Button, Radio, Input, Layout, List, message } from 'antd';
 import { UploadOutlined, SendOutlined } from '@ant-design/icons';
+import axios from 'axios';
 import './App.css';
 import { chatService } from './services/api';
 
@@ -10,117 +11,93 @@ const { TextArea } = Input;
 const NASP_PDFChatbot = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showMore, setShowMore] = useState(false);
-  const [language, setLanguage] = useState('en'); // State for managing selected language
-  const [messages, setMessages] = useState([]);
-  const [inputText, setInputText] = useState('');
+  const [language, setLanguage] = useState('English');
+  const [chatInput, setChatInput] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const toggleShowMore = () => {
     setShowMore(!showMore);
   };
 
-  const onUpload = async (info) => {
-    const file = info.file.originFileObj;
-    if (file && !uploadedFiles.some(f => f.name === file.name)) {
-      try {
-        // Add loading message
-        setMessages(prev => [...prev, {
-          type: 'bot',
-          content: `Uploading file "${file.name}"...`
-        }]);
+  const customUpload = async (info) => {
+    const file = info.file;
+    
+    // Create FormData to send file
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('language', language);
 
-        const response = await chatService.uploadFile(file, language);
-        
-        if (response.success || response.status === 'success') {
-          setUploadedFiles(prev => {
-            const isDuplicate = prev.some(f => f.name === file.name);
-            return isDuplicate ? prev : [...prev, { name: file.name }];
-          });
-          setMessages(prev => [...prev, {
-            type: 'bot',
-            content: `File "${file.name}" has been successfully uploaded and processed.`
-          }]);
-        } else {
-          throw new Error(response.message || response.error || 'Upload failed');
+    try {
+      const response = await axios.post('http://localhost:8000/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
         }
-      } catch (error) {
-        setMessages(prev => [...prev, {
-          type: 'bot',
-          content: `Error uploading file: ${error.message}`
-        }]);
-        console.error('Error uploading file:', error);
-      }
+      });
+
+      message.success(`${file.name} uploaded successfully`);
+      setUploadedFiles(prevFiles => {
+        // Prevent duplicate files
+        if (!prevFiles.some(f => f.name === file.name)) {
+          return [...prevFiles, { name: file.name }];
+        }
+        return prevFiles;
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      message.error(`${file.name} upload failed: ${error.response?.data?.detail || error.message}`);
     }
-  };
-
-  const visibleFiles = showMore 
-    ? [...new Set(uploadedFiles.map(f => f.name))].map(name => ({ name }))
-    : [...new Set(uploadedFiles.slice(0, 3).map(f => f.name))].map(name => ({ name }));
-
-  const handleLanguageChange = (e) => {
-    setLanguage(e.target.value); // Update state when a new language is selected
-  };
-
-  const handleInputChange = (e) => {
-    setInputText(e.target.value);
   };
 
   const handleSendMessage = async () => {
-    if (!inputText.trim()) return;
+    if (!chatInput.trim()) return;
+
+    // Add user message to chat history
+    const userMessage = { sender: 'user', text: chatInput };
+    setChatHistory(prev => [...prev, userMessage]);
+    
+    // Clear input
+    setChatInput('');
+    
+    // Set loading state
+    setIsLoading(true);
 
     try {
-        // Add user message to chat immediately
-        setMessages(prev => [...prev, { 
-            type: 'user', 
-            content: inputText 
-        }]);
+      // Send message to backend
+      const response = await axios.post('http://localhost:8000/chat', {
+        message: chatInput,
+        language: language
+      });
 
-        const userMessage = inputText;
-        setInputText(''); // Clear input immediately after sending
-
-        // Add loading message
-        setMessages(prev => [...prev, {
-            type: 'bot',
-            content: '...',
-            isLoading: true
-        }]);
-
-        const response = await chatService.sendMessage(userMessage, language);
-        
-        // Remove loading message and add response
-        setMessages(prev => {
-            const filtered = prev.filter(msg => !msg.isLoading);
-            return [...filtered, { 
-                type: 'bot', 
-                content: response.response || response.message 
-            }];
-        });
-
+      // Add bot response to chat history
+      const botMessage = { 
+        sender: 'bot', 
+        text: response.data.response 
+      };
+      setChatHistory(prev => [...prev, botMessage]);
     } catch (error) {
-        // Remove loading message and add error
-        setMessages(prev => {
-            const filtered = prev.filter(msg => !msg.isLoading);
-            return [...filtered, {
-                type: 'bot',
-                content: `Error: ${error.message}`
-            }];
-        });
-        console.error('Error sending message:', error);
+      console.error('Chat error:', error);
+      message.error(`Failed to send message: ${error.response?.data?.detail || error.message}`);
+      
+      // Add error message to chat history
+      const errorMessage = { 
+        sender: 'system', 
+        text: 'Sorry, there was an error processing your message.' 
+      };
+      setChatHistory(prev => [...prev, errorMessage]);
+    } finally {
+      // Reset loading state
+      setIsLoading(false);
     }
   };
 
-  const handleFileUpload = async (info) => {
-    try {
-      const response = await chatService.uploadFile(info.file.originFileObj, language);
-      if (response.status === 'success') {
-        setUploadedFiles(prev => [...prev, { name: info.file.name }]);
-      }
-    } catch (error) {
-      console.error('Error uploading file:', error);
-    }
+  const visibleFiles = showMore ? uploadedFiles : uploadedFiles.slice(0, 3);
+
+  const handleLanguageChange = (e) => {
+    setLanguage(e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1));
   };
 
   return (
-
     <div className="combined-container">
     <Layout className="chat-layout">
       <Sider width={300} className="upload-sider">
@@ -129,8 +106,8 @@ const NASP_PDFChatbot = () => {
           <h3 className="upload-header">Upload Additional Documents</h3>
           <p>Upload PDF, DOCX, or TXT files</p>
           <Upload.Dragger
-            multiple
-            onChange={onUpload}
+            multiple={false}
+            customRequest={customUpload}
             showUploadList={false}
             className="upload-dragger"
             customRequest={({ file, onSuccess }) => {
@@ -138,6 +115,7 @@ const NASP_PDFChatbot = () => {
                 onSuccess("ok");
               }, 0);
             }}
+            accept=".pdf,.docx,.txt"
           >
             <div className="upload-info">
               <UploadOutlined className="upload-icon" />
@@ -174,39 +152,51 @@ const NASP_PDFChatbot = () => {
         <p className="language-label">Select Language / Выберите язык / Tilni tanlang</p>
 
         {/* Radio buttons for language selection */}
-        <Radio.Group onChange={handleLanguageChange} value={language}>
-          <Radio value="en">English</Radio>
-          <Radio value="ru">Русский</Radio>
-          <Radio value="uz">O'zbek</Radio>
+        <Radio.Group onChange={handleLanguageChange} value={language.toLowerCase()}>
+          <Radio value="english">English</Radio>
+          <Radio value="russian">Русский</Radio>
+          <Radio value="uzbek">O'zbek</Radio>
         </Radio.Group>
 
-        {/* Display messages */}
-        <div className="chat-messages">
-          {messages.map((msg, index) => (
-            <div key={index} className={`message ${msg.type}`}>
-              {msg.content}
+        {/* Chat History */}
+        <div className="chat-history">
+          {chatHistory.map((message, index) => (
+            <div 
+              key={index} 
+              className={`chat-message ${message.sender}`}
+            >
+              {message.text}
             </div>
           ))}
+          {isLoading && (
+            <div className="chat-message bot loading">
+              Typing...
+            </div>
+          )}
         </div>
 
-        {/* Update TextArea and Send Button */}
+        {/* TextArea and Send Button Container */}
         <div className="chat-input-container">
           <TextArea 
-            value={inputText}
-            onChange={handleInputChange}
             placeholder="What would you like to know?" 
             rows={4} 
-            className="chat-input" 
+            className="chat-input"
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onPressEnter={handleSendMessage}
           />
           <Button
+            type="text"
             type="text"
             icon={<SendOutlined />}
             className="send-button"
             onClick={handleSendMessage}
+            loading={isLoading}
           />
         </div>
       </Content>
-    </Layout></div>
+    </Layout>
+    </div>
   );
 };
 
