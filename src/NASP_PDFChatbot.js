@@ -18,14 +18,43 @@ const NASP_PDFChatbot = () => {
     setShowMore(!showMore);
   };
 
-  const onUpload = (info) => {
+  const onUpload = async (info) => {
     const file = info.file.originFileObj;
     if (file && !uploadedFiles.some(f => f.name === file.name)) {
-      setUploadedFiles([...uploadedFiles, { name: file.name }]);
+      try {
+        // Add loading message
+        setMessages(prev => [...prev, {
+          type: 'bot',
+          content: `Uploading file "${file.name}"...`
+        }]);
+
+        const response = await chatService.uploadFile(file, language);
+        
+        if (response.success || response.status === 'success') {
+          setUploadedFiles(prev => {
+            const isDuplicate = prev.some(f => f.name === file.name);
+            return isDuplicate ? prev : [...prev, { name: file.name }];
+          });
+          setMessages(prev => [...prev, {
+            type: 'bot',
+            content: `File "${file.name}" has been successfully uploaded and processed.`
+          }]);
+        } else {
+          throw new Error(response.message || response.error || 'Upload failed');
+        }
+      } catch (error) {
+        setMessages(prev => [...prev, {
+          type: 'bot',
+          content: `Error uploading file: ${error.message}`
+        }]);
+        console.error('Error uploading file:', error);
+      }
     }
   };
 
-  const visibleFiles = showMore ? uploadedFiles : uploadedFiles.slice(0, 3);
+  const visibleFiles = showMore 
+    ? [...new Set(uploadedFiles.map(f => f.name))].map(name => ({ name }))
+    : [...new Set(uploadedFiles.slice(0, 3).map(f => f.name))].map(name => ({ name }));
 
   const handleLanguageChange = (e) => {
     setLanguage(e.target.value); // Update state when a new language is selected
@@ -39,14 +68,43 @@ const NASP_PDFChatbot = () => {
     if (!inputText.trim()) return;
 
     try {
-      const response = await chatService.sendMessage(inputText, language);
-      setMessages(prev => [...prev, 
-        { type: 'user', content: inputText },
-        { type: 'bot', content: response.response }
-      ]);
-      setInputText('');
+        // Add user message to chat immediately
+        setMessages(prev => [...prev, { 
+            type: 'user', 
+            content: inputText 
+        }]);
+
+        const userMessage = inputText;
+        setInputText(''); // Clear input immediately after sending
+
+        // Add loading message
+        setMessages(prev => [...prev, {
+            type: 'bot',
+            content: '...',
+            isLoading: true
+        }]);
+
+        const response = await chatService.sendMessage(userMessage, language);
+        
+        // Remove loading message and add response
+        setMessages(prev => {
+            const filtered = prev.filter(msg => !msg.isLoading);
+            return [...filtered, { 
+                type: 'bot', 
+                content: response.response || response.message 
+            }];
+        });
+
     } catch (error) {
-      console.error('Error sending message:', error);
+        // Remove loading message and add error
+        setMessages(prev => {
+            const filtered = prev.filter(msg => !msg.isLoading);
+            return [...filtered, {
+                type: 'bot',
+                content: `Error: ${error.message}`
+            }];
+        });
+        console.error('Error sending message:', error);
     }
   };
 
@@ -75,6 +133,11 @@ const NASP_PDFChatbot = () => {
             onChange={onUpload}
             showUploadList={false}
             className="upload-dragger"
+            customRequest={({ file, onSuccess }) => {
+              setTimeout(() => {
+                onSuccess("ok");
+              }, 0);
+            }}
           >
             <div className="upload-info">
               <UploadOutlined className="upload-icon" />
