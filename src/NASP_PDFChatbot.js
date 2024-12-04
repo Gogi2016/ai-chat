@@ -3,7 +3,6 @@ import { Upload, Button, Radio, Input, Layout, List, message, Spin } from 'antd'
 import { UploadOutlined, SendOutlined, LoadingOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import './App.css';
-import { chatService } from './services/api';
 
 const { Sider, Content } = Layout;
 const { TextArea } = Input;
@@ -33,7 +32,7 @@ const NASP_PDFChatbot = () => {
     formData.append('language', language);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/upload`, formData, {
+      await axios.post(`${API_BASE_URL}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -49,7 +48,7 @@ const NASP_PDFChatbot = () => {
       });
     } catch (error) {
       console.error('Upload error:', error);
-      message.error(`${file.name} upload failed: ${error.response?.data?.detail || error.message}`);
+      message.error(`${file.name} upload failed: ${error.message}`);
     } finally {
       setIsUploading(false);
     }
@@ -83,7 +82,7 @@ const NASP_PDFChatbot = () => {
       setChatHistory(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Chat error:', error);
-      message.error(`Failed to send message: ${error.response?.data?.detail || error.message}`);
+      message.error(`Failed to send message: ${error.message}`);
       
       // Add error message to chat history
       const errorMessage = { 
@@ -127,11 +126,11 @@ const NASP_PDFChatbot = () => {
               {isUploading ? (
                 <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
               ) : (
-                <>
+                <div>
                   <UploadOutlined className="upload-icon" />
                   <p>Drag and drop file here</p>
                   <Button className="browse-button">Browse files</Button>
-                </>
+                </div>
               )}
             </div>
           </Upload.Dragger>
