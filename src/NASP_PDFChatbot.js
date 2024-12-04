@@ -8,6 +8,8 @@ import { chatService } from './services/api';
 const { Sider, Content } = Layout;
 const { TextArea } = Input;
 
+const API_BASE_URL = 'http://154.0.164.254:8000';
+
 const NASP_PDFChatbot = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showMore, setShowMore] = useState(false);
@@ -31,7 +33,7 @@ const NASP_PDFChatbot = () => {
     formData.append('language', language);
 
     try {
-      const response = await axios.post('http://localhost:8000/upload', formData, {
+      const response = await axios.post(`${API_BASE_URL}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -68,7 +70,7 @@ const NASP_PDFChatbot = () => {
 
     try {
       // Send message to backend
-      const response = await axios.post('http://localhost:8000/chat', {
+      const response = await axios.post(`${API_BASE_URL}/chat`, {
         message: chatInput,
         language: language
       });
