@@ -8,5 +8,6 @@ export const API_BASE_URL = isDevelopment
 export const endpoints = {
     chat: '/chat',
     upload: '/upload',
-    languages: '/languages'
+    languages: '/languages',
+    summarize: '/summarize'
 };

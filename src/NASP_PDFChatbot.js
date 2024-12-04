@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Upload, Button, Radio, Input, Layout, List, message } from 'antd';
-import { UploadOutlined, SendOutlined } from '@ant-design/icons';
+import { Upload, Button, Radio, Input, Layout, List, message, Spin } from 'antd';
+import { UploadOutlined, SendOutlined, LoadingOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import './App.css';
 import { chatService } from './services/api';
@@ -15,6 +15,7 @@ const NASP_PDFChatbot = () => {
   const [chatInput, setChatInput] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const toggleShowMore = () => {
     setShowMore(!showMore);
@@ -22,6 +23,7 @@ const NASP_PDFChatbot = () => {
 
   const customUpload = async (info) => {
     const file = info.file;
+    setIsUploading(true);
     
     // Create FormData to send file
     const formData = new FormData();
@@ -46,6 +48,8 @@ const NASP_PDFChatbot = () => {
     } catch (error) {
       console.error('Upload error:', error);
       message.error(`${file.name} upload failed: ${error.response?.data?.detail || error.message}`);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -118,9 +122,15 @@ const NASP_PDFChatbot = () => {
             accept=".pdf,.docx,.txt"
           >
             <div className="upload-info">
-              <UploadOutlined className="upload-icon" />
-              <p>Drag and drop file here</p>
-              <Button className="browse-button">Browse files</Button>
+              {isUploading ? (
+                <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+              ) : (
+                <>
+                  <UploadOutlined className="upload-icon" />
+                  <p>Drag and drop file here</p>
+                  <Button className="browse-button">Browse files</Button>
+                </>
+              )}
             </div>
           </Upload.Dragger>
         </div>

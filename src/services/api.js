@@ -49,3 +49,31 @@ export const chatService = {
         }
     }
 };
+
+export const summarizationService = {
+    summarize: async (text, useCase, systemPrompt) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}${endpoints.summarize}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    text,
+                    use_case: useCase,
+                    system_prompt: systemPrompt
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error in summarization:', error);
+            throw error;
+        }
+    }
+};
