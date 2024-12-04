@@ -115,11 +115,6 @@ const NASP_PDFChatbot = () => {
             customRequest={customUpload}
             showUploadList={false}
             className="upload-dragger"
-            customRequest={({ file, onSuccess }) => {
-              setTimeout(() => {
-                onSuccess("ok");
-              }, 0);
-            }}
             accept=".pdf,.docx,.txt"
           >
             <div className="upload-info">
@@ -157,10 +152,10 @@ const NASP_PDFChatbot = () => {
         <p className="language-label">Select Language / Выберите язык / Tilni tanlang</p>
 
         {/* Radio buttons for language selection */}
-        <Radio.Group onChange={handleLanguageChange} value={language.toLowerCase()}>
-          <Radio value="english">English</Radio>
-          <Radio value="russian">Русский</Radio>
-          <Radio value="uzbek">O'zbek</Radio>
+        <Radio.Group onChange={(e) => setLanguage(e.target.value)} value={language}>
+          <Radio value="en">English</Radio>
+          <Radio value="ru">Русский</Radio>
+          <Radio value="uz">O'zbek</Radio>
         </Radio.Group>
 
         {/* Chat History */}
@@ -191,7 +186,6 @@ const NASP_PDFChatbot = () => {
             onPressEnter={handleSendMessage}
           />
           <Button
-            type="text"
             type="text"
             icon={<SendOutlined />}
             className="send-button"
