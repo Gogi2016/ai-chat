@@ -11,7 +11,7 @@ const { TextArea } = Input;
 const NASP_PDFChatbot = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showMore, setShowMore] = useState(false);
-  const [language, setLanguage] = useState('English');
+  const [language, setLanguage] = useState('en');
   const [chatInput, setChatInput] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -94,7 +94,12 @@ const NASP_PDFChatbot = () => {
   const visibleFiles = showMore ? uploadedFiles : uploadedFiles.slice(0, 3);
 
   const handleLanguageChange = (e) => {
-    setLanguage(e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1));
+    const languageMap = {
+      'english': 'en',
+      'russian': 'ru',
+      'uzbek': 'uz'
+    };
+    setLanguage(languageMap[e.target.value]);
   };
 
   return (
