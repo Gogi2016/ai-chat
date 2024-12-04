@@ -112,6 +112,11 @@ const NASP_PDFChatbot = () => {
             customRequest={customUpload}
             showUploadList={false}
             className="upload-dragger"
+            customRequest={({ file, onSuccess }) => {
+              setTimeout(() => {
+                onSuccess("ok");
+              }, 0);
+            }}
             accept=".pdf,.docx,.txt"
           >
             <div className="upload-info">

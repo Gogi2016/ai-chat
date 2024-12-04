@@ -7,17 +7,16 @@ export const chatService = {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json',
                 },
-                credentials: 'include',
                 body: JSON.stringify({ 
-                    message: message, 
-                    language: language 
+                    message, 
+                    language 
                 })
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
             }
             
             return await response.json();
@@ -37,19 +36,15 @@ export const chatService = {
                 method: 'POST',
                 body: formData,
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+            }
+
             return await response.json();
         } catch (error) {
             console.error('Error uploading file:', error);
-            throw error;
-        }
-    },
-
-    getLanguages: async () => {
-        try {
-            const response = await fetch(`${API_BASE_URL}${endpoints.languages}`);
-            return await response.json();
-        } catch (error) {
-            console.error('Error fetching languages:', error);
             throw error;
         }
     }
