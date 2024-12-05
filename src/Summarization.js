@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Typography, Radio, Input, Button, Space, message } from 'antd';
+import { Typography, Radio, Input, Button, Space, message, Upload, UploadOutlined } from 'antd';
 import { summarizationService } from './services/api';
+import { API_CONFIG } from './config/config';
 import './App.css';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
+const API_BASE_URL = API_CONFIG.NASP_API_URL;
 
 const Summarization = () => {
   const [selectedUseCase, setSelectedUseCase] = useState('Summarization');
