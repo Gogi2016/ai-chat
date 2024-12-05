@@ -33,7 +33,11 @@ const MalawiInfrastructureProjectsChatbot = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Origin': window.location.origin
           },
+          credentials: 'include',
+          mode: 'cors',
           body: JSON.stringify({
             message: userQuery,
             chat_history: chatHistory.map(item => ({
@@ -44,7 +48,8 @@ const MalawiInfrastructureProjectsChatbot = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Network response was not ok');
+          const errorData = await response.json().catch(() => null);
+          throw new Error(errorData?.detail || 'Network response was not ok');
         }
 
         const data = await response.json();
