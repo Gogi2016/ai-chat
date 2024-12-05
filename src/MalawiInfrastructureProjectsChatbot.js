@@ -1,140 +1,169 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, Input, Button, Select, List, Spin } from 'antd';
+import { Layout, Input, Button, Select, List, Spin, message } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
+import { API_CONFIG } from './config/config';
 import './App.css';
 
 const { Content } = Layout;
 const { TextArea } = Input;
 const { Option } = Select;
 
+const API_BASE_URL = API_CONFIG.MALAWI_API_URL;
+
 const MalawiInfrastructureProjectsChatbot = () => {
-  const [language, setLanguage] = useState('english'); // Language selection state
-  const [input, setInput] = useState(''); // User input state
-  const [chatHistory, setChatHistory] = useState([]); // Chat history state
-  const [isTyping, setIsTyping] = useState(false); // Typing animation state
-  const chatContainerRef = useRef(null); // Ref for auto-scrolling the chat
+  const [language, setLanguage] = useState('english');
+  const [input, setInput] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const chatContainerRef = useRef(null);
 
   const handleLanguageChange = (value) => {
     setLanguage(value);
   };
 
-  const handleSend = (question) => {
+  const handleSend = async (question) => {
     const userQuery = question || input;
     if (userQuery.trim()) {
       setChatHistory((prevHistory) => [...prevHistory, { type: 'query', text: userQuery }]);
       setIsTyping(true);
 
-      // Simulate fetching a dynamic response (replace with API call if needed)
-      setTimeout(() => {
-        const mockResponse = generateResponse(userQuery);
+      try {
+        const response = await fetch(`${API_BASE_URL}/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query: userQuery,
+            language: language,
+            max_results: 5
+          }),
+        });
 
-        // Add bot response to chat history
-        setChatHistory((prevHistory) => [...prevHistory, { type: 'response', text: mockResponse }]);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
 
+        const data = await response.json();
+        setChatHistory((prevHistory) => [...prevHistory, { 
+          type: 'response', 
+          text: data.response,
+          context: data.context,
+          suggestions: data.suggestions
+        }]);
+        
+        if (data.suggestions) {
+          setSuggestions(data.suggestions);
+        }
+
+      } catch (error) {
+        message.error('Failed to get response from chatbot');
+        console.error('Error:', error);
+      } finally {
         setIsTyping(false);
-        setInput(''); 
-      }, 1500); // Simulate network delay
+        setInput('');
+      }
     }
   };
 
-  // Mock function to simulate responses based on the query
-  const generateResponse = (query) => {
-    const responses = {
-      "Show more projects": "There are 20 infrastructure projects in Malawi, focusing on key development areas.",
-      "Show projects by sector.": "The projects are categorized into three main sectors: Education, Transport, and Health.",
-      "Show projects by region": "The projects are distributed across Northern, Central, and Southern regions of Malawi."
-    };
-  
-    return responses[query] || "Fetching the latest data. Please wait...";
-  };
-
-  const suggestedQuestions = [
-    "Show more projects",
-    "Show projects by sector.",
-    "Show projects by region"
-  ];
-
-  // Auto-scroll chat container to bottom on new messages
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chatHistory]);
 
+  const suggestedQuestions = [
+    "Show me infrastructure projects in Malawi",
+    "What are the project sectors?",
+    "Show projects by region",
+  ];
+
   return (
-    <Layout className="chat-layout">
-      <Content className="chat-content">
-        <h1 className="chat-title">Malawi Infrastructure Projects Chatbot</h1>
-        <p className="language-label">Select Language</p>
-  
-        {/* Language Selection Dropdown */}
-        <Select
-          value={language}
-          onChange={handleLanguageChange}
-          style={{ width: 200, marginBottom: '20px' }}
+    <Layout className="chat-container">
+      <Content style={{ padding: '24px', height: '100vh' }}>
+        <div className="language-selector" style={{ marginBottom: '20px' }}>
+          <Select
+            defaultValue={language}
+            onChange={handleLanguageChange}
+            style={{ width: 120 }}
+          >
+            <Option value="english">English</Option>
+            <Option value="chichewa">Chichewa</Option>
+          </Select>
+        </div>
+
+        <div
+          ref={chatContainerRef}
+          className="chat-messages"
+          style={{
+            height: 'calc(100vh - 200px)',
+            overflowY: 'auto',
+            marginBottom: '20px',
+            padding: '20px',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '8px',
+          }}
         >
-          <Option value="english">English</Option>
-          <Option value="chichewa">Chichewa</Option>
-          <Option value="tumbuka">Tumbuka</Option>
-          <Option value="yao">Yao</Option>
-        </Select>
-  
-        {/* Combined Chat Container */}
-        <div className="combined-container">
-          {/* Chat History */}
-          <div className="chat-box" ref={chatContainerRef}>
-            <List
-              dataSource={chatHistory}
-              renderItem={(item, index) => (
-                <List.Item key={index} className={item.type === 'query' ? 'query' : 'response'}>
-                  <div className={item.type === 'query' ? 'query-text' : 'response-text'}>
-                    {item.text}
-                  </div>
-                </List.Item>
-              )}
-              className="chat-history"
-            />
-            {/* Typing Indicator */}
-            {isTyping && (
-              <div className="typing-indicator">
-                <Spin size="small" />
-                <span>Typing...</span>
-              </div>
-            )}
-          </div>
-  
-          {/* Suggested Questions */}
-          <div className="suggested-questions">
-            <h3>Suggested Questions:</h3>
-            <div className="flex-container">
-              {suggestedQuestions.map((item, index) => (
-                <div
-                  key={index}
-                  className="suggested-question-item"
-                  onClick={() => handleSend(item)}
-                >
-                  {item}
+          <List
+            itemLayout="horizontal"
+            dataSource={chatHistory}
+            renderItem={(item) => (
+              <List.Item className={`message ${item.type}`}>
+                <div className={`message-content ${item.type}`}>
+                  <p>{item.text}</p>
+                  {item.context && (
+                    <div className="context-info">
+                      <small>Source: {item.context}</small>
+                    </div>
+                  )}
                 </div>
-              ))}
+              </List.Item>
+            )}
+          />
+          {isTyping && (
+            <div className="typing-indicator">
+              <Spin size="small" /> Typing...
             </div>
-          </div>
-  
-          {/* Text Area and Send Button */}
-          <div className="chat-input-container">
-            <TextArea
-              placeholder="Ask about infrastructure projects..."
-              rows={4}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="chat-input"
-            />
+          )}
+        </div>
+
+        <div className="suggested-questions" style={{ marginBottom: '20px' }}>
+          {suggestions.length > 0 ? suggestions : suggestedQuestions.map((question, index) => (
             <Button
-              type="text"
-              icon={<SendOutlined />}
-              className="send-button"
-              onClick={() => handleSend()}
-            />
-          </div>
+              key={index}
+              type="default"
+              size="small"
+              style={{ margin: '0 8px 8px 0' }}
+              onClick={() => handleSend(question)}
+            >
+              {question}
+            </Button>
+          ))}
+        </div>
+
+        <div className="chat-input" style={{ display: 'flex', gap: '8px' }}>
+          <TextArea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message here..."
+            autoSize={{ minRows: 1, maxRows: 4 }}
+            onPressEnter={(e) => {
+              if (!e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            style={{ flex: 1 }}
+          />
+          <Button
+            type="primary"
+            icon={<SendOutlined />}
+            onClick={() => handleSend()}
+            style={{ alignSelf: 'flex-end' }}
+          >
+            Send
+          </Button>
         </div>
       </Content>
     </Layout>
