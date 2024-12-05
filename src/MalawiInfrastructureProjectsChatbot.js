@@ -35,9 +35,11 @@ const MalawiInfrastructureProjectsChatbot = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            query: userQuery,
-            language: language,
-            max_results: 5
+            message: userQuery,
+            chat_history: chatHistory.map(item => ({
+              type: item.type,
+              text: item.text
+            }))
           }),
         });
 
@@ -48,13 +50,12 @@ const MalawiInfrastructureProjectsChatbot = () => {
         const data = await response.json();
         setChatHistory((prevHistory) => [...prevHistory, { 
           type: 'response', 
-          text: data.response,
-          context: data.context,
-          suggestions: data.suggestions
+          text: data.answer,
+          suggestions: data.suggested_questions
         }]);
         
-        if (data.suggestions) {
-          setSuggestions(data.suggestions);
+        if (data.suggested_questions) {
+          setSuggestions(data.suggested_questions);
         }
 
       } catch (error) {
