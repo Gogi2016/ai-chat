@@ -130,7 +130,7 @@ const MalawiInfrastructureProjectsChatbot = () => {
         </div>
 
         <div className="suggested-questions" style={{ marginBottom: '20px' }}>
-          {suggestions.length > 0 ? suggestions : suggestedQuestions.map((question, index) => (
+          {(suggestions.length > 0 ? suggestions : suggestedQuestions).map((question, index) => (
             <Button
               key={index}
               type="default"
