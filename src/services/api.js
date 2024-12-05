@@ -1,9 +1,10 @@
-import { API_BASE_URL, endpoints } from '../config/api';
+import { API_BASE_URLS, endpoints } from '../config/api';
 
 export const chatService = {
-    sendMessage: async (message, language = 'en') => {
+    sendMessage: async (message, language = 'en', chatbotType = 'nasp') => {
         try {
-            const response = await fetch(`${API_BASE_URL}${endpoints.chat}`, {
+            const baseUrl = API_BASE_URLS[chatbotType];
+            const response = await fetch(`${baseUrl}${endpoints.chat}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -26,13 +27,14 @@ export const chatService = {
         }
     },
 
-    uploadFile: async (file, language = 'en') => {
+    uploadFile: async (file, language = 'en', chatbotType = 'nasp') => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('language', language);
 
         try {
-            const response = await fetch(`${API_BASE_URL}${endpoints.upload}`, {
+            const baseUrl = API_BASE_URLS[chatbotType];
+            const response = await fetch(`${baseUrl}${endpoints.upload}`, {
                 method: 'POST',
                 body: formData,
             });
@@ -51,9 +53,10 @@ export const chatService = {
 };
 
 export const summarizationService = {
-    summarize: async (text, useCase, systemPrompt) => {
+    summarize: async (text, useCase, systemPrompt, chatbotType = 'nasp') => {
         try {
-            const response = await fetch(`${API_BASE_URL}${endpoints.summarize}`, {
+            const baseUrl = API_BASE_URLS[chatbotType];
+            const response = await fetch(`${baseUrl}${endpoints.summarize}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
