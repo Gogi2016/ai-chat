@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Upload, Button, Radio, Input, Layout, List, message, Spin } from 'antd';
 import { UploadOutlined, SendOutlined, LoadingOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import { API_CONFIG } from './config/config';
 import './App.css';
 
 const { Sider, Content } = Layout;
 const { TextArea } = Input;
 
-const API_BASE_URL = 'http://154.0.164.254:8000';
+const API_BASE_URL = API_CONFIG.NASP_API_URL;
 
 const NASP_PDFChatbot = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
