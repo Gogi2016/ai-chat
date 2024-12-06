@@ -4,8 +4,8 @@ const config = {
         MALAWI_API_URL: 'http://localhost:8001'
     },
     production: {
-        NASP_API_URL: 'http://154.0.164.254:8000',
-        MALAWI_API_URL: 'http://154.0.164.254:8001'  // Update this with your production URL
+        NASP_API_URL: 'http://154.0.164.254/api/nasp',
+        MALAWI_API_URL: 'http://154.0.164.254/api/malawi'
     }
 };
 
