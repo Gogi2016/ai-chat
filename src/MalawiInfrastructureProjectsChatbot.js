@@ -29,43 +29,64 @@ const MalawiInfrastructureProjectsChatbot = () => {
       setIsTyping(true);
 
       try {
+        console.log('Sending request to:', `${API_BASE_URL}/chat`);
+        console.log('Request payload:', {
+          message: userQuery,
+          language: language
+        });
+
         const response = await fetch(`${API_BASE_URL}/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'Origin': window.location.origin
+            'Origin': window.location.origin,
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
           },
-          credentials: 'include',
           mode: 'cors',
           body: JSON.stringify({
             message: userQuery,
-            chat_history: chatHistory.map(item => ({
-              type: item.type,
-              text: item.text
-            }))
+            language: language
           }),
         });
 
+        console.log('Response status:', response.status);
+        const responseText = await response.text();
+        console.log('Response text:', responseText);
+
         if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          throw new Error(errorData?.detail || 'Network response was not ok');
+          let errorMessage = 'Network response was not ok';
+          try {
+            const errorData = JSON.parse(responseText);
+            errorMessage = errorData?.detail || errorMessage;
+          } catch (e) {
+            console.error('Error parsing error response:', e);
+          }
+          throw new Error(errorMessage);
         }
 
-        const data = await response.json();
+        const data = JSON.parse(responseText);
+        console.log('Parsed response data:', data);
+
         setChatHistory((prevHistory) => [...prevHistory, { 
           type: 'response', 
-          text: data.answer,
-          suggestions: data.suggested_questions
+          text: data.answer || 'No response received',
+          error: data.error
         }]);
         
-        if (data.suggested_questions) {
+        if (data.suggested_questions && data.suggested_questions.length > 0) {
           setSuggestions(data.suggested_questions);
         }
 
       } catch (error) {
-        message.error('Failed to get response from chatbot');
-        console.error('Error:', error);
+        console.error('Full error:', error);
+        message.error(`Failed to get response from chatbot: ${error.message}`);
+        setChatHistory((prevHistory) => [...prevHistory, { 
+          type: 'error', 
+          text: `Error: ${error.message}`
+        }]);
       } finally {
         setIsTyping(false);
         setInput('');
