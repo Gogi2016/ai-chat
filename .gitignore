@@ -23,4 +23,36 @@ yarn-debug.log*
 yarn-error.log*
 .venv/
 src/nasp-chatbot.code-workspace
+
+# Service files and sensitive data
+*.service
 .env
+*.env
+/services/*.service
+
+# Logs
+*.log
+/var/log/
+
+# Backup files
+*.bak
+
+# Build
+/build
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Service files and sensitive data
+*.service
+.env
+*.env
+/services/*.service
+
+# Logs
+*.log
+/var/log/
+
+# Backup files
+*.bak
