@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { Typography, Radio, Input, Button, Space, message, Upload, UploadOutlined } from 'antd';
+import { Typography, Radio, Input, Button, Space, message } from 'antd';
 import { summarizationService } from './services/api';
-import { API_CONFIG } from './config/config';
 import './App.css';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
-const API_BASE_URL = API_CONFIG.NASP_API_URL;
 
 const Summarization = () => {
   const [selectedUseCase, setSelectedUseCase] = useState('Summarization');
@@ -57,66 +55,68 @@ const Summarization = () => {
   };
 
   return (
-    <div className="container">
-      <h1 className="chat-title">Together AI Web Interface</h1>
-      <Text className="language-label">Select a use case, input your query, and see the results!</Text>
+    <div style={{ padding: '20px' }}>
+      <Title level={2}>NLP demo</Title>
+      <Text>
+        This tab is a demonstration of natural language processing (NLP). Three use cases are covered - 
+        (i) summarizing text, (ii) extracting common topics from text and (iii) sentiment analysis of text. 
+        Copy and paste your text into the input text box to begin.
+      </Text>
 
-      <div className="section">
+      <div style={{ marginTop: '20px' }}>
         <Title level={3}>Select Use Case</Title>
-        <Text>Choose one of the use cases:</Text>
-        <div className="radio-group-container">
-          <Radio.Group
-            onChange={handleUseCaseChange}
-            value={selectedUseCase}
-            className="radio-group"
-          >
-            <Space direction="vertical">
-              <Radio value="Summarization">Summarization</Radio>
-              <Radio value="Topic Analysis">Topic Analysis</Radio>
-              <Radio value="Sentiment Analysis">Sentiment Analysis</Radio>
-            </Space>
-          </Radio.Group>
-        </div>
+        <Radio.Group onChange={handleUseCaseChange} value={selectedUseCase}>
+          <Space direction="vertical">
+            <Radio value="Summarization">Summarization</Radio>
+            <Radio value="Topic Analysis">Topic Analysis</Radio>
+            <Radio value="Sentiment Analysis">Sentiment Analysis</Radio>
+          </Space>
+        </Radio.Group>
       </div>
 
-      <div className="section">
+      <div style={{ marginTop: '20px' }}>
         <Title level={3}>Enter Text</Title>
         <Text>Input Text</Text>
-        <TextArea 
+        <TextArea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Enter the text you want to analyze..." 
-          rows={4} 
-          className="chat-input"
+          placeholder="Enter the text you want to analyze..."
+          autoSize={{ minRows: 4, maxRows: 8 }}
+          style={{ marginTop: '10px' }}
         />
+      </div>
 
-        <Text className="system-prompt-label">System Prompt</Text>
-        <TextArea 
+      <div style={{ marginTop: '20px' }}>
+        <Title level={3}>System Prompt</Title>
+        <TextArea
           value={systemPrompt}
           onChange={(e) => setSystemPrompt(e.target.value)}
-          placeholder="Provide instructions to the AI (optional)..." 
-          rows={4} 
-          className="chat-input"
+          autoSize={{ minRows: 2, maxRows: 4 }}
+          placeholder="Customize the system prompt if needed..."
         />
-
-        <Button 
-          type="primary" 
-          className="run-button" 
-          onClick={handleSubmit}
-          loading={loading}
-        >
-          {loading ? 'Processing...' : 'Run'}
-        </Button>
-
-        {result && (
-          <div className="section">
-            <Title level={3}>Result</Title>
-            <div className="result-container">
-              <Text>{result}</Text>
-            </div>
-          </div>
-        )}
       </div>
+
+      <Button 
+        type="primary"
+        onClick={handleSubmit}
+        loading={loading}
+        style={{ marginTop: '20px' }}
+      >
+        {loading ? 'Processing...' : 'Run'}
+      </Button>
+
+      {result && (
+        <div style={{ marginTop: '20px' }}>
+          <Title level={3}>Result</Title>
+          <div style={{ 
+            padding: '15px',
+            background: '#f5f5f5',
+            borderRadius: '4px'
+          }}>
+            {result}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
