@@ -9,5 +9,6 @@ const config = {
     }
 };
 
-const env = process.env.NODE_ENV || 'development';
+// Prioritize production environment, fallback to development
+const env = process.env.NODE_ENV === 'production' ? 'production' : 'development';
 export const API_CONFIG = config[env];

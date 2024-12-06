@@ -69,28 +69,52 @@ const NASP_PDFChatbot = () => {
     setIsLoading(true);
 
     try {
-      // Send message to backend
+      // Send message to backend with detailed configuration
       const response = await axios.post(`${API_BASE_URL}/chat`, {
         message: chatInput,
         language: language
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        timeout: 10000  // 10 seconds timeout
       });
 
       // Add bot response to chat history
       const botMessage = { 
         sender: 'bot', 
-        text: response.data.response 
+        text: response.data.response || 'No response received from the server.' 
       };
       setChatHistory(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Chat error:', error);
-      message.error(`Failed to send message: ${error.message}`);
       
+      // Detailed error handling
+      let errorMessage = 'Sorry, there was an error processing your message.';
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        errorMessage = error.response.data?.detail || 
+                       `Server error: ${error.response.status}`;
+      } else if (error.request) {
+        // The request was made but no response was received
+        errorMessage = 'No response received from the server. Please check your connection.';
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        errorMessage = `Request setup error: ${error.message}`;
+      }
+
       // Add error message to chat history
-      const errorMessage = { 
+      const systemMessage = { 
         sender: 'system', 
-        text: 'Sorry, there was an error processing your message.' 
+        text: errorMessage 
       };
-      setChatHistory(prev => [...prev, errorMessage]);
+      setChatHistory(prev => [...prev, systemMessage]);
+
+      // Show error message to user
+      message.error(errorMessage);
     } finally {
       // Reset loading state
       setIsLoading(false);
