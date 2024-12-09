@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, Input, Button, Select, List, Spin, message } from 'antd';
+import { Layout, Input, Button, Select, List, Spin, message, Radio, Typography, Space } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
 import { API_CONFIG } from './config/config';
 import './App.css';
@@ -7,6 +7,7 @@ import './App.css';
 const { Content } = Layout;
 const { TextArea } = Input;
 const { Option } = Select;
+const { Title, Text } = Typography;
 
 const API_BASE_URL = `${API_CONFIG.RAG_SQL_API_URL}/api/rag-sql-chatbot`;
 
@@ -18,8 +19,8 @@ const RAGSQLChatbot = () => {
   const [suggestions, setSuggestions] = useState([]);
   const chatContainerRef = useRef(null);
 
-  const handleLanguageChange = (value) => {
-    setLanguage(value);
+  const handleLanguageChange = (e) => {
+    setLanguage(e.target.value);
   };
 
   const handleSend = async (question) => {
@@ -113,22 +114,21 @@ const RAGSQLChatbot = () => {
   return (
     <Layout className="chat-container">
       <Content style={{ padding: '24px', height: '100vh' }}>
-        <div className="language-selector" style={{ marginBottom: '20px' }}>
-          <Select
-            defaultValue={language}
-            onChange={handleLanguageChange}
-            style={{ width: 120 }}
-          >
-            <Option value="english">English</Option>
-            <Option value="chichewa">Chichewa</Option>
-          </Select>
+        <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+          <Text>Select Language / Выберите язык / Tilni tanlang</Text>
+          <div style={{ marginTop: '10px' }}>
+            <Radio.Group value={language} onChange={handleLanguageChange}>
+              <Radio value="english">English</Radio>
+              <Radio value="chichewa">Chichewa</Radio>
+            </Radio.Group>
+          </div>
         </div>
 
         <div
           ref={chatContainerRef}
           className="chat-messages"
           style={{
-            height: 'calc(100vh - 200px)',
+            height: 'calc(100vh - 300px)',
             overflowY: 'auto',
             marginBottom: '20px',
             padding: '20px',
@@ -159,21 +159,31 @@ const RAGSQLChatbot = () => {
           )}
         </div>
 
-        <div className="suggested-questions" style={{ marginBottom: '20px' }}>
-          {(suggestions.length > 0 ? suggestions : suggestedQuestions).map((question, index) => (
-            <Button
-              key={index}
-              type="default"
-              size="small"
-              style={{ margin: '0 8px 8px 0' }}
-              onClick={() => handleSend(question)}
-            >
-              {question}
-            </Button>
-          ))}
+        <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+          <Text strong>Suggested questions:</Text>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+            {(suggestions.length > 0 ? suggestions : suggestedQuestions).map((question, index) => (
+              <Button
+                key={index}
+                type="default"
+                size="small"
+                style={{ margin: '0 8px 8px 0' }}
+                onClick={() => handleSend(question)}
+              >
+                {question}
+              </Button>
+            ))}
+          </div>
         </div>
 
-        <div className="chat-input" style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ 
+          position: 'sticky',
+          bottom: 0,
+          background: '#fff',
+          padding: '20px 0',
+          borderTop: '1px solid #f0f0f0',
+          marginTop: '20px'
+        }}>
           <TextArea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -185,13 +195,12 @@ const RAGSQLChatbot = () => {
                 handleSend();
               }
             }}
-            style={{ flex: 1 }}
           />
           <Button
             type="primary"
             icon={<SendOutlined />}
             onClick={() => handleSend()}
-            style={{ alignSelf: 'flex-end' }}
+            style={{ marginTop: '10px', float: 'right' }}
           >
             Send
           </Button>

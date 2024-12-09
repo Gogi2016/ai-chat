@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Upload, Button, Radio, Input, Layout, List, message, Spin } from 'antd';
+import { Upload, Button, Radio, Input, Layout, List, message, Spin, Typography } from 'antd';
 import { UploadOutlined, SendOutlined, LoadingOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { API_CONFIG } from './config/config';
 import './App.css';
 
-const { Sider, Content } = Layout;
+const { Content, Sider } = Layout;
 const { TextArea } = Input;
+const { Text } = Typography;
 
 const API_BASE_URL = `${API_CONFIG.RAG_PDF_API_URL}/api/rag-pdf-chatbot`;
 
@@ -19,15 +20,10 @@ const RAGPDFChatbot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const toggleShowMore = () => {
-    setShowMore(!showMore);
-  };
-
   const customUpload = async (info) => {
     const file = info.file;
     setIsUploading(true);
     
-    // Create FormData to send file
     const formData = new FormData();
     formData.append('files', file);
     formData.append('session_id', Date.now().toString());
@@ -41,7 +37,6 @@ const RAGPDFChatbot = () => {
 
       message.success(`${file.name} uploaded successfully`);
       setUploadedFiles(prevFiles => {
-        // Prevent duplicate files
         if (!prevFiles.some(f => f.name === file.name)) {
           return [...prevFiles, { name: file.name }];
         }
@@ -58,14 +53,9 @@ const RAGPDFChatbot = () => {
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
 
-    // Add user message to chat history
     const userMessage = { sender: 'user', text: chatInput };
     setChatHistory(prev => [...prev, userMessage]);
-    
-    // Clear input
     setChatInput('');
-    
-    // Set loading state
     setIsLoading(true);
 
     try {
@@ -90,96 +80,64 @@ const RAGPDFChatbot = () => {
       setChatHistory(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Chat error:', error);
-      
-      // Detailed error handling
-      let errorMessage = 'Sorry, there was an error processing your message.';
-      
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        errorMessage = error.response.data?.detail || 
-                       `Server error: ${error.response.status}`;
-      } else if (error.request) {
-        // The request was made but no response was received
-        errorMessage = 'No response received from the server. Please check your connection.';
-      } else {
-        // Something happened in setting up the request that triggered an Error
-        errorMessage = `Request setup error: ${error.message}`;
-      }
-
-      // Add error message to chat history
-      const systemMessage = { 
-        sender: 'system', 
-        text: errorMessage 
-      };
-      setChatHistory(prev => [...prev, systemMessage]);
-
-      // Show error message to user
-      message.error(errorMessage);
+      const errorMessage = error.response?.data?.detail || 'An error occurred while processing your request.';
+      setChatHistory(prev => [...prev, { sender: 'system', text: errorMessage }]);
     } finally {
-      // Reset loading state
       setIsLoading(false);
     }
   };
 
   const visibleFiles = showMore ? uploadedFiles : uploadedFiles.slice(0, 3);
 
-  const handleLanguageChange = (e) => {
-    const languageMap = {
-      'english': 'en',
-      'russian': 'ru',
-      'uzbek': 'uz'
-    };
-    setLanguage(languageMap[e.target.value]);
-  };
-
   return (
-    <div className="combined-container">
-    <Layout className="chat-layout">
-      <Sider width={300} className="upload-sider">
-        {/* Upload Section */}
-        <div className="upload-section">
-          <h3 className="upload-header">Upload Additional Documents</h3>
+    <Layout style={{ minHeight: '100%', background: '#fff' }}>
+      <Sider width={300} style={{ background: '#fff', padding: '20px', borderRight: '1px solid #f0f0f0' }}>
+        <div>
+          <h3>Upload Additional Documents</h3>
           <p>Upload PDF, DOCX, or TXT files</p>
-          <Upload.Dragger
-            multiple={false}
+          <Upload
             customRequest={customUpload}
             showUploadList={false}
-            className="upload-dragger"
             accept=".pdf,.docx,.txt"
+            disabled={isUploading}
           >
-            <div className="upload-info">
-              {isUploading ? (
-                <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
-              ) : (
-                <div>
-                  <UploadOutlined className="upload-icon" />
-                  <p>Drag and drop file here</p>
-                  <Button className="browse-button">Browse files</Button>
-                </div>
-              )}
+            <div style={{ 
+              border: '2px dashed #d9d9d9',
+              borderRadius: '8px',
+              padding: '20px',
+              textAlign: 'center',
+              background: '#fafafa',
+              marginBottom: '20px'
+            }}>
+              <p><UploadOutlined style={{ fontSize: '24px' }} /></p>
+              <p>Drag and drop file here</p>
+              <Button type="primary" loading={isUploading}>
+                Browse files
+              </Button>
             </div>
-          </Upload.Dragger>
-        </div>
+          </Upload>
 
-        {/* Uploaded Files Section */}
-        <div className="uploaded-files-section">
-          <List
-            header={<div className="file-list-header">Uploaded Files</div>}
-            dataSource={visibleFiles}
-            renderItem={(item) => (
-              <List.Item className="file-list-item">
-                {item.name}
-              </List.Item>
+          <div>
+            <h3>Uploaded Files</h3>
+            {uploadedFiles.length === 0 ? (
+              <p style={{ color: '#999' }}>No files uploaded yet</p>
+            ) : (
+              <List
+                size="small"
+                dataSource={visibleFiles}
+                renderItem={item => (
+                  <List.Item>
+                    {item.name}
+                  </List.Item>
+                )}
+              />
             )}
-            className="file-list"
-            locale={{ emptyText: 'No files uploaded yet' }}
-          />
-          {uploadedFiles.length > 3 && (
-            <Button type="link" onClick={toggleShowMore} className="show-more-button">
-              {showMore ? 'Show Less' : 'Show More'}
-            </Button>
-          )}
+            {uploadedFiles.length > 3 && (
+              <Button type="link" onClick={() => setShowMore(!showMore)}>
+                {showMore ? 'Show Less' : 'Show More'}
+              </Button>
+            )}
+          </div>
         </div>
       </Sider>
 
@@ -212,27 +170,38 @@ const RAGPDFChatbot = () => {
           )}
         </div>
 
-        {/* TextArea and Send Button Container */}
-        <div className="chat-input-container">
-          <TextArea 
-            placeholder="What would you like to know?" 
-            rows={4} 
-            className="chat-input"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onPressEnter={handleSendMessage}
-          />
-          <Button
-            type="text"
-            icon={<SendOutlined />}
-            className="send-button"
-            onClick={handleSendMessage}
-            loading={isLoading}
-          />
+          <div style={{ 
+            position: 'sticky',
+            bottom: 0,
+            background: '#fff',
+            padding: '20px 0',
+            borderTop: '1px solid #f0f0f0'
+          }}>
+            <TextArea
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="What would you like to know?"
+              autoSize={{ minRows: 1, maxRows: 6 }}
+              onPressEnter={(e) => {
+                if (!e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+            />
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              onClick={handleSendMessage}
+              loading={isLoading}
+              style={{ marginTop: '10px', float: 'right' }}
+            >
+              Send
+            </Button>
+          </div>
         </div>
       </Content>
     </Layout>
-    </div>
   );
 };
 

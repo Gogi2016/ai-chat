@@ -83,7 +83,7 @@ const NLPDemo = () => {
       <h1 className="chat-title">NLP Analysis Demo</h1>
       <Text className="language-label">Select a use case, input your text, and see the analysis results!</Text>
 
-      <div className="section">
+      <div style={{ marginTop: '20px' }}>
         <Title level={3}>Select Use Case</Title>
         <Text>Choose one of the use cases:</Text>
         <div className="radio-group-container">
@@ -101,25 +101,27 @@ const NLPDemo = () => {
         </div>
       </div>
 
-      <div className="section">
+      <div style={{ marginTop: '20px' }}>
         <Title level={3}>Enter Text</Title>
         <Text>Input Text</Text>
-        <TextArea 
+        <TextArea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
-          placeholder="Enter the text you want to analyze..." 
-          rows={4} 
-          className="chat-input"
+          placeholder="Enter the text you want to analyze..."
+          autoSize={{ minRows: 4, maxRows: 8 }}
+          style={{ marginTop: '10px' }}
         />
+      </div>
 
-        <Text className="system-prompt-label">System Prompt</Text>
-        <TextArea 
+      <div style={{ marginTop: '20px' }}>
+        <Title level={3}>System Prompt</Title>
+        <TextArea
           value={systemPrompt}
           onChange={(e) => setSystemPrompt(e.target.value)}
-          placeholder="Provide instructions to the AI (optional)..." 
-          rows={4} 
-          className="chat-input"
+          autoSize={{ minRows: 2, maxRows: 4 }}
+          placeholder="Customize the system prompt if needed..."
         />
+      </div>
 
         <Button 
           type="primary" 
