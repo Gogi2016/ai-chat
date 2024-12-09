@@ -56,3 +56,4 @@ src/nasp-chatbot.code-workspace
 
 # Backup files
 *.bak
+*.cfg
