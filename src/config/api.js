@@ -20,8 +20,7 @@ export const APP_BASE_URL = isDevelopment
     : `https://${QA_DOMAIN}/app`;
 
 export const endpoints = {
-    chat: '/chat',
+    query: '/query',
     upload: '/upload',
-    languages: '/languages',
-    summarize: '/summarize'
+    languages: '/languages'
 };

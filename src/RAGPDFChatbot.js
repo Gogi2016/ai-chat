@@ -8,9 +8,9 @@ import './App.css';
 const { Sider, Content } = Layout;
 const { TextArea } = Input;
 
-const API_BASE_URL = API_CONFIG.NASP_API_URL;
+const API_BASE_URL = `${API_CONFIG.RAG_PDF_API_URL}/api/rag-pdf-chatbot`;
 
-const NASP_PDFChatbot = () => {
+const RAGPDFChatbot = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showMore, setShowMore] = useState(false);
   const [language, setLanguage] = useState('en');
@@ -29,8 +29,8 @@ const NASP_PDFChatbot = () => {
     
     // Create FormData to send file
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('language', language);
+    formData.append('files', file);
+    formData.append('session_id', Date.now().toString());
 
     try {
       await axios.post(`${API_BASE_URL}/upload`, formData, {
@@ -70,9 +70,10 @@ const NASP_PDFChatbot = () => {
 
     try {
       // Send message to backend with detailed configuration
-      const response = await axios.post(`${API_BASE_URL}/chat`, {
+      const response = await axios.post(`${API_BASE_URL}/query`, {
         message: chatInput,
-        language: language
+        language: language,
+        session_id: Date.now().toString()
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -184,7 +185,7 @@ const NASP_PDFChatbot = () => {
 
       {/* Chat Content Section */}
       <Content className="chat-content">
-        <h1 className="chat-title">NASP Chatbot</h1>
+        <h1 className="chat-title">RAG PDF Chatbot</h1>
         <p className="language-label">Select Language / Выберите язык / Tilni tanlang</p>
 
         {/* Radio buttons for language selection */}
@@ -235,4 +236,4 @@ const NASP_PDFChatbot = () => {
   );
 };
 
-export default NASP_PDFChatbot;
+export default RAGPDFChatbot;

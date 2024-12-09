@@ -8,9 +8,9 @@ const { Content } = Layout;
 const { TextArea } = Input;
 const { Option } = Select;
 
-const API_BASE_URL = API_CONFIG.MALAWI_API_URL;
+const API_BASE_URL = `${API_CONFIG.RAG_SQL_API_URL}/api/rag-sql-chatbot`;
 
-const MalawiInfrastructureProjectsChatbot = () => {
+const RAGSQLChatbot = () => {
   const [language, setLanguage] = useState('english');
   const [input, setInput] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
@@ -29,13 +29,14 @@ const MalawiInfrastructureProjectsChatbot = () => {
       setIsTyping(true);
 
       try {
-        console.log('Sending request to:', `${API_BASE_URL}/chat`);
+        console.log('Sending request to:', `${API_BASE_URL}/query`);
         console.log('Request payload:', {
           message: userQuery,
-          language: language
+          language: language,
+          session_id: Date.now().toString()
         });
 
-        const response = await fetch(`${API_BASE_URL}/chat`, {
+        const response = await fetch(`${API_BASE_URL}/query`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -48,7 +49,8 @@ const MalawiInfrastructureProjectsChatbot = () => {
           mode: 'cors',
           body: JSON.stringify({
             message: userQuery,
-            language: language
+            language: language,
+            session_id: Date.now().toString()
           }),
         });
 
@@ -72,7 +74,7 @@ const MalawiInfrastructureProjectsChatbot = () => {
 
         setChatHistory((prevHistory) => [...prevHistory, { 
           type: 'response', 
-          text: data.answer || 'No response received',
+          text: data.response || 'No response received',
           error: data.error
         }]);
         
@@ -104,6 +106,8 @@ const MalawiInfrastructureProjectsChatbot = () => {
     "Show me infrastructure projects in Malawi",
     "What are the project sectors?",
     "Show projects by region",
+    "List projects in Northern Region",
+    "What is the status of education projects?"
   ];
 
   return (
@@ -173,7 +177,7 @@ const MalawiInfrastructureProjectsChatbot = () => {
           <TextArea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message here..."
+            placeholder="Ask about infrastructure projects in Malawi..."
             autoSize={{ minRows: 1, maxRows: 4 }}
             onPressEnter={(e) => {
               if (!e.shiftKey) {
@@ -197,4 +201,4 @@ const MalawiInfrastructureProjectsChatbot = () => {
   );
 };
 
-export default MalawiInfrastructureProjectsChatbot;
+export default RAGSQLChatbot; 
