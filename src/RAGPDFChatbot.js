@@ -170,35 +170,34 @@ const RAGPDFChatbot = () => {
           )}
         </div>
 
-          <div style={{ 
-            position: 'sticky',
-            bottom: 0,
-            background: '#fff',
-            padding: '20px 0',
-            borderTop: '1px solid #f0f0f0'
-          }}>
-            <TextArea
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="What would you like to know?"
-              autoSize={{ minRows: 1, maxRows: 6 }}
-              onPressEnter={(e) => {
-                if (!e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-            />
-            <Button
-              type="primary"
-              icon={<SendOutlined />}
-              onClick={handleSendMessage}
-              loading={isLoading}
-              style={{ marginTop: '10px', float: 'right' }}
-            >
-              Send
-            </Button>
-          </div>
+        <div style={{ 
+          position: 'sticky',
+          bottom: 0,
+          background: '#fff',
+          padding: '20px 0',
+          borderTop: '1px solid #f0f0f0'
+        }}>
+          <TextArea
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            placeholder="What would you like to know?"
+            autoSize={{ minRows: 1, maxRows: 6 }}
+            onPressEnter={(e) => {
+              if (!e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+          />
+          <Button
+            type="primary"
+            icon={<SendOutlined />}
+            onClick={handleSendMessage}
+            loading={isLoading}
+            style={{ marginTop: '10px', float: 'right' }}
+          >
+            Send
+          </Button>
         </div>
       </Content>
     </Layout>

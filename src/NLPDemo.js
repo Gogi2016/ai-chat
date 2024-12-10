@@ -121,7 +121,6 @@ const NLPDemo = () => {
           autoSize={{ minRows: 2, maxRows: 4 }}
           placeholder="Customize the system prompt if needed..."
         />
-      </div>
 
         <Button 
           type="primary" 
