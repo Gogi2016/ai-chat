@@ -1,5 +1,7 @@
 # AI Chat Application
 
+Repository: https://github.com/kwantu/chatai
+
 This is the React frontend for the NASP Chatbot project. It provides a modern web interface for interacting with our AI chatbot system.
 
 ## Project Structure
