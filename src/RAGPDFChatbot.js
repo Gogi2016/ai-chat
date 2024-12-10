@@ -69,7 +69,7 @@ const RAGPDFChatbot = () => {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        timeout: 10000  // 10 seconds timeout
+        timeout: 30000  // Increased to 30 seconds
       });
 
       // Add bot response to chat history
@@ -80,8 +80,15 @@ const RAGPDFChatbot = () => {
       setChatHistory(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Chat error:', error);
-      const errorMessage = error.response?.data?.detail || 'An error occurred while processing your request.';
-      setChatHistory(prev => [...prev, { sender: 'system', text: errorMessage }]);
+      const errorMessage = error.response?.data?.detail || 
+                          error.response?.data?.message || 
+                          error.message || 
+                          'An error occurred while processing your request.';
+      message.error(errorMessage); // Show error in UI notification
+      setChatHistory(prev => [...prev, { 
+        sender: 'system', 
+        text: `Error: ${errorMessage}. Status: ${error.response?.status || 'unknown'}` 
+      }]);
     } finally {
       setIsLoading(false);
     }
