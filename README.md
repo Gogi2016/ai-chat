@@ -16,9 +16,24 @@ The project consists of two main parts:
 npm install
 ```
 
-2. Create a `.env` file in the root directory with:
+2. Environment Configuration:
+
+### Development Environment
+Create a `.env` file in the root directory with:
 ```env
-REACT_APP_API_URL=http://localhost:8000
+PORT=3000
+HOST=0.0.0.0
+REACT_APP_NODE_ENV=production
+PUBLIC_URL=http://154.0.164.254:3000
+```
+
+### Production Environment
+Create a `.env.production` file in the root directory with:
+```env
+PORT=3000
+HOST=0.0.0.0
+REACT_APP_NODE_ENV=production
+PUBLIC_URL=https://ai.kwantu.support
 ```
 
 ## Available Scripts
@@ -29,7 +44,10 @@ Runs the app in development mode at [http://localhost:3000](http://localhost:300
 
 ### `npm run build`
 
-Builds the app for production to the `build` folder
+Builds the app for production to the `build` folder. For production builds, use:
+```bash
+NODE_ENV=production npm run build
+```
 
 ### `npm test`
 
@@ -47,10 +65,12 @@ The application is built using:
 
 1. Build the production version:
 ```bash
-npm run build
+NODE_ENV=production npm run build
 ```
 
-2. Deploy the contents of the `build` folder to your web server
+2. The build process will use:
+   - Development settings (`.env`) when building with `npm run build`
+   - Production settings (`.env.production`) when building with `NODE_ENV=production npm run build`
 
 ## Related Projects
 
