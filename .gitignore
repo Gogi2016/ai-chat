@@ -60,3 +60,4 @@ src/nasp-chatbot.code-workspace
 .env.production
 .env
 .env
+.env.development
