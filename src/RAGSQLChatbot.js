@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, Input, Button, Select, List, Spin, message, Radio, Typography, Space } from 'antd';
+import { Layout, Input, Button, List, Spin, message, Radio, Typography } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
 import { API_CONFIG } from './config/config';
 import './App.css';
 
 const { Content } = Layout;
 const { TextArea } = Input;
-const { Option } = Select;
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const API_BASE_URL = `${API_CONFIG.RAG_SQL_API_URL}/api/rag-sql-chatbot`;
 
