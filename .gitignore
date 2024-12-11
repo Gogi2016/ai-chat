@@ -59,3 +59,4 @@ src/nasp-chatbot.code-workspace
 *.cfg
 .env.production
 .env
+.env
