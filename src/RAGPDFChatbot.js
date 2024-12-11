@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { Upload, Button, Radio, Input, Layout, List, message, Spin, Typography } from 'antd';
-import { UploadOutlined, SendOutlined, LoadingOutlined } from '@ant-design/icons';
+import { Upload, Button, Radio, Input, Layout, List, message } from 'antd';
+import { UploadOutlined, SendOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { API_CONFIG } from './config/config';
-import './App.css';
 
 const { Content, Sider } = Layout;
 const { TextArea } = Input;
-const { Text } = Typography;
 
-const API_BASE_URL = `${API_CONFIG.RAG_PDF_API_URL}/api/rag-pdf-chatbot`;
+const API_BASE_URL = API_CONFIG.RAG_PDF_API_URL;
 
 const RAGPDFChatbot = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
