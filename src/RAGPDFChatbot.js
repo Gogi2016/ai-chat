@@ -32,7 +32,8 @@ const RAGPDFChatbot = () => {
       await axios.post(`${API_BASE_URL}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 60000 // 60 second timeout
       });
 
       message.success(`${file.name} uploaded successfully`);
@@ -44,7 +45,10 @@ const RAGPDFChatbot = () => {
       });
     } catch (error) {
       console.error('Upload error:', error);
-      message.error(`${file.name} upload failed: ${error.message}`);
+      const errorMessage = error.code === 'ECONNABORTED'
+        ? 'Upload timed out after 60 seconds. Please try again.'
+        : `${file.name} upload failed: ${error.message}`;
+      message.error(errorMessage);
     } finally {
       setIsUploading(false);
     }
@@ -53,41 +57,145 @@ const RAGPDFChatbot = () => {
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
 
+    const requestId = `req-${Date.now()}`;
+    const startTime = performance.now();
+    
+    // Log API configuration
+    console.log(`[${requestId}] API Configuration:`, {
+      baseUrl: API_BASE_URL,
+      environment: process.env.NODE_ENV,
+      apiUrl: API_CONFIG.RAG_PDF_API_URL
+    });
+
+    console.log(`[${requestId}] Network Information:`, {
+      onLine: navigator.onLine,
+      connection: navigator.connection ? {
+        effectiveType: navigator.connection.effectiveType,
+        rtt: navigator.connection.rtt,
+        downlink: navigator.connection.downlink
+      } : 'Not available'
+    });
+
     const userMessage = { sender: 'user', text: chatInput };
     setChatHistory(prev => [...prev, userMessage]);
     setChatInput('');
     setIsLoading(true);
 
+    let timeoutCounter = 0;
+    const checkConnectionInterval = setInterval(() => {
+      timeoutCounter += 1;
+      console.log(`[${requestId}] Connection check at ${timeoutCounter}s:`, {
+        online: navigator.onLine,
+        timeElapsed: `${timeoutCounter} seconds`
+      });
+    }, 1000);
+
     try {
-      // Send message to backend with detailed configuration
+      console.log(`[${requestId}] Initiating axios call...`);
+      const fetchStartTime = performance.now();
+
+      // Test server response time with a HEAD request
+      try {
+        const serverCheckStart = performance.now();
+        const serverCheck = await axios.head(`${API_BASE_URL}/status`);
+        const serverCheckEnd = performance.now();
+        console.log(`[${requestId}] Server response time: ${(serverCheckEnd - serverCheckStart).toFixed(2)}ms`);
+      } catch (serverCheckError) {
+        console.error(`[${requestId}] Server check failed:`, serverCheckError);
+      }
+
       const response = await axios.post(`${API_BASE_URL}/query`, {
         message: chatInput,
         language: language,
-        session_id: Date.now().toString()
+        session_id: requestId
       }, {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        timeout: 30000  // Increased to 30 seconds
+        timeout: 60000,
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          console.log(`[${requestId}] Upload progress: ${progress}%`, {
+            loaded: progressEvent.loaded,
+            total: progressEvent.total,
+            timeElapsed: (performance.now() - startTime).toFixed(2)
+          });
+        },
+        onDownloadProgress: (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          console.log(`[${requestId}] Download progress: ${progress}%`, {
+            loaded: progressEvent.loaded,
+            total: progressEvent.total,
+            timeElapsed: (performance.now() - startTime).toFixed(2)
+          });
+        }
       });
 
-      // Add bot response to chat history
+      clearInterval(checkConnectionInterval);
+      const fetchEndTime = performance.now();
+      console.log(`[${requestId}] Axios call completed in ${(fetchEndTime - fetchStartTime).toFixed(2)}ms`);
+      console.log(`[${requestId}] Response status:`, response.status);
+      console.log(`[${requestId}] Response headers:`, response.headers);
+      console.log(`[${requestId}] Response data:`, response.data);
+
+      if (response.data.processing_time) {
+        console.log(`[${requestId}] Backend processing time:`, {
+          total: response.data.processing_time,
+          operations: response.data.operation_times
+        });
+      }
+
       const botMessage = { 
         sender: 'bot', 
         text: response.data.response || 'No response received from the server.' 
       };
       setChatHistory(prev => [...prev, botMessage]);
+
+      const endTime = performance.now();
+      console.log(`[${requestId}] Total request time: ${(endTime - startTime).toFixed(2)}ms`);
+
     } catch (error) {
-      console.error('Chat error:', error);
-      const errorMessage = error.response?.data?.detail || 
-                          error.response?.data?.message || 
-                          error.message || 
-                          'An error occurred while processing your request.';
-      message.error(errorMessage); // Show error in UI notification
+      clearInterval(checkConnectionInterval);
+      const endTime = performance.now();
+
+      // Enhanced error logging
+      const errorDetails = {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        stack: error.stack,
+        response: error.response?.data,
+        timings: {
+          totalTime: (endTime - startTime).toFixed(2),
+          atTime: new Date().toISOString()
+        },
+        network: {
+          online: navigator.onLine,
+          connection: navigator.connection ? {
+            effectiveType: navigator.connection.effectiveType,
+            rtt: navigator.connection.rtt,
+            downlink: navigator.connection.downlink
+          } : 'Not available'
+        },
+        request: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          timeout: error.config?.timeout
+        }
+      };
+
+      console.error(`[${requestId}] Request failed:`, errorDetails);
+
+      const errorMessage = error.code === 'ECONNABORTED'
+        ? `Request timed out after 60 seconds. Please try again. Network status: ${navigator.onLine ? 'Online' : 'Offline'}`
+        : error.response?.data?.detail || error.message || 'An error occurred while processing your request.';
+      
+      message.error(errorMessage);
       setChatHistory(prev => [...prev, { 
         sender: 'system', 
-        text: `Error: ${errorMessage}. Status: ${error.response?.status || 'unknown'}` 
+        text: `Error: ${errorMessage}` 
       }]);
     } finally {
       setIsLoading(false);
