@@ -95,11 +95,13 @@ const RAGPDFChatbot = () => {
       // Test server response time with a HEAD request
       try {
         const serverCheckStart = performance.now();
-        const serverCheck = await axios.head(`${API_BASE_URL}/status`);
+        await fetch(`${API_BASE_URL}/status`, {
+          method: 'HEAD'
+        });
         const serverCheckEnd = performance.now();
         console.log(`[${requestId}] Server response time: ${(serverCheckEnd - serverCheckStart).toFixed(2)}ms`);
-      } catch (serverCheckError) {
-        console.error(`[${requestId}] Server check failed:`, serverCheckError);
+      } catch (error) {
+        console.error(`[${requestId}] Server check failed:`, error);
       }
 
       const response = await axios.post(`${API_BASE_URL}/query`, {

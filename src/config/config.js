@@ -50,3 +50,4 @@ console.log('Current hostname:', window.location.hostname);
 console.log('API Configuration:', apiConfig);
 
 export const API_CONFIG = apiConfig;
+export default apiConfig;

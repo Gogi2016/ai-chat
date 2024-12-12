@@ -35,7 +35,7 @@ const RAGSQLChatbot = () => {
         apiUrl: API_CONFIG.SQL_API_URL
       });
 
-      console.log(`[${requestId}] Starting API call to ${API_BASE_URL}/query`);
+      console.log(`[${requestId}] Starting API call to ${API_BASE_URL}/api/rag-sql-chatbot/query`);
       console.log(`[${requestId}] Network Information:`, {
         onLine: navigator.onLine,
         connection: navigator.connection ? {
@@ -74,7 +74,7 @@ const RAGSQLChatbot = () => {
 
         // Race between fetch and timeout
         const response = await Promise.race([
-          fetch(`${API_BASE_URL}/query`, {
+          fetch(`${API_BASE_URL}/api/rag-sql-chatbot/query`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -101,16 +101,16 @@ const RAGSQLChatbot = () => {
         const fetchEndTime = performance.now();
         console.log(`[${requestId}] Fetch completed in ${(fetchEndTime - fetchStartTime).toFixed(2)}ms`);
 
-        // Test server response time with a HEAD request
+        // Test server response time with a GET request
         try {
           const serverCheckStart = performance.now();
-          const serverCheck = await fetch(`${API_BASE_URL}/status`, {
-            method: 'HEAD'
+          await fetch(`${API_BASE_URL}/api/rag-sql-chatbot/status`, {
+            method: 'GET'
           });
           const serverCheckEnd = performance.now();
           console.log(`[${requestId}] Server response time: ${(serverCheckEnd - serverCheckStart).toFixed(2)}ms`);
-        } catch (serverCheckError) {
-          console.error(`[${requestId}] Server check failed:`, serverCheckError);
+        } catch (error) {
+          console.error(`[${requestId}] Server check failed:`, error);
         }
 
         console.log(`[${requestId}] Response status:`, response.status);
@@ -140,7 +140,7 @@ const RAGSQLChatbot = () => {
 
         setChatHistory((prevHistory) => [...prevHistory, { 
           type: 'response', 
-          text: data.response || 'No response received',
+          text: data.answer || 'No response received',
           error: data.error
         }]);
         
