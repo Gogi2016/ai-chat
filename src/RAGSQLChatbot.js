@@ -8,7 +8,7 @@ const { Content } = Layout;
 const { TextArea } = Input;
 const { Text } = Typography;
 
-const API_BASE_URL = `${API_CONFIG.RAG_SQL_API_URL}/api/rag-sql-chatbot`;
+const API_BASE_URL = API_CONFIG.SQL_API_URL;
 
 const RAGSQLChatbot = () => {
   const [language, setLanguage] = useState('english');
@@ -32,7 +32,7 @@ const RAGSQLChatbot = () => {
       console.log(`[${requestId}] API Configuration:`, {
         baseUrl: API_BASE_URL,
         environment: process.env.NODE_ENV,
-        apiUrl: API_CONFIG.RAG_SQL_API_URL
+        apiUrl: API_CONFIG.SQL_API_URL
       });
 
       console.log(`[${requestId}] Starting API call to ${API_BASE_URL}/query`);

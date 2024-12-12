@@ -7,7 +7,7 @@ import { API_CONFIG } from './config/config';
 const { Content, Sider } = Layout;
 const { TextArea } = Input;
 
-const API_BASE_URL = API_CONFIG.RAG_PDF_API_URL;
+const API_BASE_URL = API_CONFIG.PDF_API_URL;
 
 const RAGPDFChatbot = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -62,7 +62,7 @@ const RAGPDFChatbot = () => {
     console.log(`[${requestId}] API Configuration:`, {
       baseUrl: API_BASE_URL,
       environment: process.env.NODE_ENV,
-      apiUrl: API_CONFIG.RAG_PDF_API_URL
+      apiUrl: API_CONFIG.PDF_API_URL
     });
 
     console.log(`[${requestId}] Network Information:`, {

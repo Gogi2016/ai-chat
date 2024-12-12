@@ -1,49 +1,36 @@
-// Get environment and host information
+// Get environment information
 const env = process.env.NODE_ENV || 'development';
-const isServerEnvironment = typeof window !== 'undefined' && window.location.hostname === '154.0.164.254';
 
-const config = {
-    // Local Windows development
-    development: {
-        BASE_API_URL: isServerEnvironment ? 'http://154.0.164.254:8000' : 'http://localhost:8000',
-        RAG_PDF_API_URL: '/api/rag-pdf-chatbot',
-        RAG_SQL_API_URL: '/api/rag-sql-chatbot',
-        NLP_API_URL: '/api/nlp'
-    },
-    // Server IP testing
-    testing: {
-        BASE_API_URL: 'http://154.0.164.254:8000',
-        RAG_PDF_API_URL: '/api/rag-pdf-chatbot',
-        RAG_SQL_API_URL: '/api/rag-sql-chatbot',
-        NLP_API_URL: '/api/nlp'
-    },
-    // QA Environment (public testing)
-    qa: {
-        BASE_API_URL: 'https://ai.kwantu.support',
-        RAG_PDF_API_URL: '/api/rag-pdf-chatbot',
-        RAG_SQL_API_URL: '/api/rag-sql-chatbot',
-        NLP_API_URL: '/api/nlp'
-    },
-    // Production Environment
-    production: {
-        BASE_API_URL: 'https://ai.kwantu.support',
-        RAG_PDF_API_URL: '/api/rag-pdf-chatbot',
-        RAG_SQL_API_URL: '/api/rag-sql-chatbot',
-        NLP_API_URL: '/api/nlp'
+// Helper function to get the appropriate API URL based on environment variables
+const getApiUrl = (pdfUrl, sqlUrl, nlpUrl) => {
+    // Use environment variables if provided
+    if (process.env.REACT_APP_PDF_API_URL && process.env.REACT_APP_SQL_API_URL && process.env.REACT_APP_NLP_API_URL) {
+        return {
+            PDF_API_URL: process.env.REACT_APP_PDF_API_URL,
+            SQL_API_URL: process.env.REACT_APP_SQL_API_URL,
+            NLP_API_URL: process.env.REACT_APP_NLP_API_URL
+        };
     }
+
+    // Fallback to default configuration
+    const isServerEnvironment = typeof window !== 'undefined' && window.location.hostname === '154.0.164.254';
+    const baseUrl = isServerEnvironment ? 'http://154.0.164.254' : 'http://localhost';
+    
+    return {
+        PDF_API_URL: `${baseUrl}:8000`,
+        SQL_API_URL: `${baseUrl}:8001`,
+        NLP_API_URL: `${baseUrl}:8002`
+    };
 };
 
-// Determine the base URL based on environment and location
-const baseApiUrl = process.env.REACT_APP_API_URL || config[env].BASE_API_URL;
+// Get API configuration based on environment
+const apiConfig = getApiUrl(
+    process.env.REACT_APP_PDF_API_URL,
+    process.env.REACT_APP_SQL_API_URL,
+    process.env.REACT_APP_NLP_API_URL
+);
 
 console.log('Current environment:', env);
-console.log('Using API URL:', baseApiUrl);
-console.log('Using RAG PDF URL:', `${baseApiUrl}${config[env].RAG_PDF_API_URL}`);
+console.log('API Configuration:', apiConfig);
 
-const apiEndpoints = {
-    RAG_PDF_API_URL: `${baseApiUrl}${config[env].RAG_PDF_API_URL}`,
-    RAG_SQL_API_URL: `${baseApiUrl}${config[env].RAG_SQL_API_URL}`,
-    NLP_API_URL: `${baseApiUrl}${config[env].NLP_API_URL}`
-};
-
-export const API_CONFIG = apiEndpoints;
+export const API_CONFIG = apiConfig;

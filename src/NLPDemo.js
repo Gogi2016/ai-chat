@@ -7,7 +7,7 @@ import './App.css';
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-const API_URL = API_CONFIG.NLP_API_URL;
+const API_BASE_URL = API_CONFIG.NLP_API_URL;
 
 const NLPDemo = () => {
   const [selectedUseCase, setSelectedUseCase] = useState('summarization');
@@ -43,14 +43,14 @@ const NLPDemo = () => {
 
     setLoading(true);
     try {
-      console.log('Sending request to:', `${API_URL}/analyze`);
+      console.log('Sending request to:', `${API_BASE_URL}/analyze`);
       console.log('Request payload:', {
         text: inputText,
         use_case: selectedUseCase,
         system_prompt: systemPrompt
       });
 
-      const response = await axios.post(`${API_URL}/analyze`, {
+      const response = await axios.post(`${API_BASE_URL}/analyze`, {
         text: inputText,
         use_case: selectedUseCase,
         system_prompt: systemPrompt
