@@ -65,25 +65,64 @@ serve -s build -l 3000
 
 ## Configuration
 
-### API Endpoints
-The application uses different API endpoints based on the environment:
+### API Endpoints and Environment Configuration
+The application uses different API endpoints based on the environment and host. The configuration is managed in `src/config/config.js`:
 
 ```javascript
-// Development
+// When running on development machine (localhost)
 BASE_API_URL: 'http://localhost:8000'
 
-// Testing
+// When running on server (154.0.164.254)
 BASE_API_URL: 'http://154.0.164.254:8000'
 
 // Production & QA
 BASE_API_URL: 'https://ai.kwantu.support'
 ```
 
-### Nginx Configuration
-The application requires Nginx as a reverse proxy. The configuration files are managed in the system's nginx directory:
+#### Environment Files
+1. Development (`.env.development`):
+```env
+PORT=3000
+HOST=0.0.0.0
+REACT_APP_NODE_ENV=development
+PUBLIC_URL=http://154.0.164.254:3000
+REACT_APP_API_URL=http://154.0.164.254:8002  # Override for specific services
+```
 
-- Main configuration: `/etc/nginx/sites-available/kwantu_80.conf`
-- Proxy settings: `/etc/nginx/conf.d/proxy_default.conf`
+2. Production (`.env.production`):
+```env
+PORT=3000
+HOST=0.0.0.0
+REACT_APP_NODE_ENV=production
+PUBLIC_URL=https://ai.kwantu.support
+REACT_APP_API_URL=https://ai.kwantu.support/api/nlp
+```
+
+#### Important Notes
+- The application automatically detects whether it's running on the server (154.0.164.254) or locally
+- When running on the server, it will use server IP addresses regardless of the environment
+- Environment variables (REACT_APP_API_URL) can override the default configuration
+- Different services (NLP, RAG-PDF) may use different ports, configure these in the environment files
+
+### Development Workflow
+1. Local Development (Windows):
+   - Frontend: http://localhost:3000
+   - Backend: http://localhost:8000
+   - Use `npm start` with NODE_ENV=development
+
+2. Server Testing:
+   - Frontend: http://154.0.164.254:3000
+   - Backend: http://154.0.164.254:8000
+   - Different services may use different ports (8000, 8001, 8002)
+   - Stop service files if testing on same ports:
+     ```bash
+     sudo systemctl stop chatai-frontend.service nlp-demo.service rag-pdf-chatbot.service
+     ```
+
+3. Production:
+   - Frontend: https://ai.kwantu.support
+   - Backend: https://ai.kwantu.support/api/*
+   - Managed by system service files in /opt/kwantuai/
 
 ## Development
 
