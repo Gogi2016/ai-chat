@@ -39,3 +39,4 @@ src/nasp-chatbot.code-workspace
 *.bak
 *.cfg
 .env.development
+.env.server
