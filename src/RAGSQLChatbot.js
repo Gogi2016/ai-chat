@@ -35,7 +35,7 @@ const RAGSQLChatbot = () => {
         apiUrl: API_CONFIG.SQL_API_URL
       });
 
-      console.log(`[${requestId}] Starting API call to ${API_BASE_URL}/api/rag-sql-chatbot/query`);
+      console.log(`[${requestId}] Starting API call to ${API_BASE_URL}/query`);
       console.log(`[${requestId}] Network Information:`, {
         onLine: navigator.onLine,
         connection: navigator.connection ? {
@@ -74,7 +74,7 @@ const RAGSQLChatbot = () => {
 
         // Race between fetch and timeout
         const response = await Promise.race([
-          fetch(`${API_BASE_URL}/api/rag-sql-chatbot/query`, {
+          fetch(`${API_BASE_URL}/query`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ const RAGSQLChatbot = () => {
         // Test server response time with a GET request
         try {
           const serverCheckStart = performance.now();
-          await fetch(`${API_BASE_URL}/api/rag-sql-chatbot/status`, {
+          await fetch(`${API_BASE_URL}/status`, {
             method: 'GET'
           });
           const serverCheckEnd = performance.now();
