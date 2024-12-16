@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Button, Radio, Input, Layout, List, message, Divider } from 'antd';
+import { Upload, Button, Radio, Input, Layout, List, message, Divider, Typography } from 'antd';
 import { UploadOutlined, SendOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { API_CONFIG } from './config/config';
 
 const { Content, Sider } = Layout;
 const { TextArea } = Input;
+const { Text } = Typography;
 
 const API_BASE_URL = API_CONFIG.PDF_API_URL;
 
@@ -19,6 +20,7 @@ const RAGPDFChatbot = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [embeddedDocuments, setEmbeddedDocuments] = useState([]);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
     fetchEmbeddedDocuments();
@@ -43,6 +45,34 @@ const RAGPDFChatbot = () => {
     return messages[lang] || messages.en;
   };
 
+  // Static suggested questions based on available documents and language
+  const getStaticSuggestions = (lang) => {
+    const suggestions = {
+      en: [
+        "What are the main social protection programs in Uzbekistan?",
+        "Tell me about disability services in Uzbekistan",
+        "What are the key findings from the COVID-19 impact analysis?",
+        "Summarize the energy subsidy reform findings",
+        "What are the recommendations for improving employment formality?"
+      ],
+      ru: [
+        "Каковы основные программы социальной защиты в Узбекистане?",
+        "Расскажите об услугах для людей с инвалидностью в Узбекистане",
+        "Каковы основные выводы анализа влияния COVID-19?",
+        "Обобщите результаты реформы энергетических субсидий",
+        "Каковы рекомендации по улучшению формальной занятости?"
+      ],
+      uz: [
+        "O'zbekistondagi asosiy ijtimoiy himoya dasturlari qanday?",
+        "O'zbekistondagi nogironligi bo'lgan shaxslarga xizmatlar haqida aytib bering",
+        "COVID-19 ta'siri tahlilining asosiy xulosalari qanday?",
+        "Energiya subsidiyalari islohotining natijalarini umumlashtiring",
+        "Rasmiy bandlikni yaxshilash bo'yicha tavsiyalar qanday?"
+      ]
+    };
+    return suggestions[lang] || suggestions.en;
+  };
+
   // Handle language change
   const handleLanguageChange = (e) => {
     const newLanguage = e.target.value;
@@ -54,15 +84,19 @@ const RAGPDFChatbot = () => {
       { sender: 'bot', text: messages[0] },
       { sender: 'bot', text: messages[1] }
     ]);
+
+    // Reset suggestions to static ones in the new language
+    setSuggestions(getStaticSuggestions(newLanguage));
   };
 
-  // Initial welcome messages
+  // Initial welcome messages and suggestions
   useEffect(() => {
     const messages = getWelcomeMessages(language);
     setChatHistory([
       { sender: 'bot', text: messages[0] },
       { sender: 'bot', text: messages[1] }
     ]);
+    setSuggestions(getStaticSuggestions(language));
   }, []); // Only run on component mount
 
   const fetchEmbeddedDocuments = async () => {
@@ -211,6 +245,13 @@ const RAGPDFChatbot = () => {
         sources: response.data.sources || [] 
       };
       setChatHistory(prev => [...prev, botMessage]);
+
+      // Update suggestions if provided by backend, otherwise use static ones in current language
+      if (response.data.suggested_questions && response.data.suggested_questions.length > 0) {
+        setSuggestions(response.data.suggested_questions);
+      } else {
+        setSuggestions(getStaticSuggestions(language));
+      }
 
       const endTime = performance.now();
       console.log(`[${requestId}] Total request time: ${(endTime - startTime).toFixed(2)}ms`);
@@ -403,6 +444,31 @@ const RAGPDFChatbot = () => {
               Typing...
             </div>
           )}
+        </div>
+
+        {/* Suggested Questions */}
+        <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+          <Text strong>
+            {language === 'en' ? 'Suggested questions:' : 
+             language === 'ru' ? 'Рекомендуемые вопросы:' : 
+             'Tavsiya etilgan savollar:'}
+          </Text>
+          <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+            {(suggestions.length > 0 ? suggestions : getStaticSuggestions(language)).map((question, index) => (
+              <Button
+                key={index}
+                type="default"
+                size="small"
+                style={{ margin: '0 8px 8px 0' }}
+                onClick={() => {
+                  setChatInput(question);
+                  handleSendMessage();
+                }}
+              >
+                {question}
+              </Button>
+            ))}
+          </div>
         </div>
 
         <div style={{ 
