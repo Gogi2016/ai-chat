@@ -24,31 +24,46 @@ const RAGPDFChatbot = () => {
     fetchEmbeddedDocuments();
   }, []);
 
-  useEffect(() => {
-    if (showWelcome) {
-      const welcomeMessages = {
-        en: [
-          "Welcome! This is a prototype chatbot for the National Agency of Social Protection. You can use it to ask questions about a library of reports, evaluations, research, and other documents.",
-          "Please enter your question in the chat box to get started."
-        ],
-        ru: [
-          "Добро пожаловать! Это прототип чат-бота Национального агентства социальной защиты. Вы можете использовать его для получения информации из библиотеки отчетов, оценок, исследований и других документов.",
-          "Пожалуйста, введите ваш вопрос в чат, чтобы начать."
-        ],
-        uz: [
-          "Xush kelibsiz! Bu Ijtimoiy himoya milliy agentligining prototip chatboti. Undan hisobotlar, baholashlar, tadqiqotlar va boshqa hujjatlar kutubxonasi haqida savol berish uchun foydalanishingiz mumkin.",
-          "Boshlash uchun chat oynasiga savolingizni kiriting."
-        ]
-      };
+  // Welcome messages for each language
+  const getWelcomeMessages = (lang) => {
+    const messages = {
+      en: [
+        "Welcome! This is a prototype chatbot for the National Agency of Social Protection. You can use it to ask questions about a library of reports, evaluations, research, and other documents.",
+        "Please enter your question in the chat box to get started."
+      ],
+      ru: [
+        "Добро пожаловать! Это прототип чат-бота Национального агентства социальной защиты. Вы можете использовать его для получения информации из библиотеки отчетов, оценок, исследований и других документов.",
+        "Пожалуйста, введите ваш вопрос в чат, чтобы начать."
+      ],
+      uz: [
+        "Xush kelibsiz! Bu Ijtimoiy himoya milliy agentligining prototip chatboti. Undan hisobotlar, baholashlar, tadqiqotlar va boshqa hujjatlar kutubxonasi haqida savol berish uchun foydalanishingiz mumkin.",
+        "Boshlash uchun chat oynasiga savolingizni kiriting."
+      ]
+    };
+    return messages[lang] || messages.en;
+  };
 
-      const messages = welcomeMessages[language] || welcomeMessages.en;
-      setChatHistory([
-        { sender: 'bot', text: messages[0] },
-        { sender: 'bot', text: messages[1] }
-      ]);
-      setShowWelcome(false);
-    }
-  }, [language, showWelcome]);
+  // Handle language change
+  const handleLanguageChange = (e) => {
+    const newLanguage = e.target.value;
+    setLanguage(newLanguage);
+    
+    // Clear chat and show welcome messages in selected language
+    const messages = getWelcomeMessages(newLanguage);
+    setChatHistory([
+      { sender: 'bot', text: messages[0] },
+      { sender: 'bot', text: messages[1] }
+    ]);
+  };
+
+  // Initial welcome messages
+  useEffect(() => {
+    const messages = getWelcomeMessages(language);
+    setChatHistory([
+      { sender: 'bot', text: messages[0] },
+      { sender: 'bot', text: messages[1] }
+    ]);
+  }, []); // Only run on component mount
 
   const fetchEmbeddedDocuments = async () => {
     try {
@@ -304,11 +319,31 @@ const RAGPDFChatbot = () => {
           <h3>Available Documents</h3>
           <List
             size="small"
-            dataSource={embeddedDocuments}
+            dataSource={[
+              { title: "WorldBank ECA Economic Update 2022", url: "#" },
+              { title: "WorldBank Energy Subsidy Reform Uzbekistan 2023", url: "#" },
+              { title: "UNICEF Road to Recovery Uzbekistan COVID 2021", url: "#" },
+              { title: "ESCAP Unpaid Care Work Uzbekistan 2023", url: "#" },
+              { title: "Uzbekistan Public Expenditure Review 2022", url: "#" },
+              { title: "UNDP Decent Employment Formality Central Asia 2024", url: "#" },
+              { title: "Analysis State System Uzbekistan Disability Services 2024", url: "#" },
+              { title: "IPCIG Universal Health Insurance Uzbekistan 2023", url: "#" }
+            ]}
             renderItem={doc => (
               <List.Item>
                 <div style={{ width: '100%', fontSize: '14px' }}>
-                  {doc.title}
+                  <a 
+                    href={doc.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ color: '#1890ff', textDecoration: 'none' }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      message.info('Document link will be available soon');
+                    }}
+                  >
+                    {doc.title}
+                  </a>
                 </div>
               </List.Item>
             )}
@@ -322,7 +357,7 @@ const RAGPDFChatbot = () => {
         <p className="language-label">Select Language / Выберите язык / Tilni tanlang</p>
 
         {/* Radio buttons for language selection */}
-        <Radio.Group onChange={(e) => setLanguage(e.target.value)} value={language}>
+        <Radio.Group onChange={handleLanguageChange} value={language}>
           <Radio value="en">English</Radio>
           <Radio value="ru">Русский</Radio>
           <Radio value="uz">O'zbek</Radio>
