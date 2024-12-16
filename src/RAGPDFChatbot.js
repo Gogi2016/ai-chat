@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Upload, Button, Radio, Input, Layout, List, message } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Upload, Button, Radio, Input, Layout, List, message, Divider } from 'antd';
 import { UploadOutlined, SendOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { API_CONFIG } from './config/config';
@@ -17,6 +17,50 @@ const RAGPDFChatbot = () => {
   const [chatHistory, setChatHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [embeddedDocuments, setEmbeddedDocuments] = useState([]);
+  const [showWelcome, setShowWelcome] = useState(true);
+
+  useEffect(() => {
+    fetchEmbeddedDocuments();
+  }, []);
+
+  useEffect(() => {
+    if (showWelcome) {
+      const welcomeMessages = {
+        en: [
+          "Welcome! This is a prototype chatbot for the National Agency of Social Protection. You can use it to ask questions about a library of reports, evaluations, research, and other documents.",
+          "Please enter your question in the chat box to get started."
+        ],
+        ru: [
+          "Добро пожаловать! Это прототип чат-бота Национального агентства социальной защиты. Вы можете использовать его для получения информации из библиотеки отчетов, оценок, исследований и других документов.",
+          "Пожалуйста, введите ваш вопрос в чат, чтобы начать."
+        ],
+        uz: [
+          "Xush kelibsiz! Bu Ijtimoiy himoya milliy agentligining prototip chatboti. Undan hisobotlar, baholashlar, tadqiqotlar va boshqa hujjatlar kutubxonasi haqida savol berish uchun foydalanishingiz mumkin.",
+          "Boshlash uchun chat oynasiga savolingizni kiriting."
+        ]
+      };
+
+      const messages = welcomeMessages[language] || welcomeMessages.en;
+      setChatHistory([
+        { sender: 'bot', text: messages[0] },
+        { sender: 'bot', text: messages[1] }
+      ]);
+      setShowWelcome(false);
+    }
+  }, [language, showWelcome]);
+
+  const fetchEmbeddedDocuments = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/documents`);
+      if (response.data.status === 'success') {
+        setEmbeddedDocuments(response.data.documents);
+      }
+    } catch (error) {
+      console.error('Error fetching embedded documents:', error);
+      message.error('Failed to load embedded documents');
+    }
+  };
 
   const customUpload = async (info) => {
     const file = info.file;
@@ -254,6 +298,21 @@ const RAGPDFChatbot = () => {
               </Button>
             )}
           </div>
+
+          <Divider />
+
+          <h3>Available Documents</h3>
+          <List
+            size="small"
+            dataSource={embeddedDocuments}
+            renderItem={doc => (
+              <List.Item>
+                <div style={{ width: '100%', fontSize: '14px' }}>
+                  {doc.title}
+                </div>
+              </List.Item>
+            )}
+          />
         </div>
       </Sider>
 
@@ -273,8 +332,16 @@ const RAGPDFChatbot = () => {
         <div className="chat-history">
           {chatHistory.map((message, index) => (
             <div key={index}>
-              <div className={`chat-message ${message.sender}`}>
-                {message.text}
+              <div className={`chat-message ${message.sender} ${message.isDocumentList ? 'document-list' : ''}`}>
+                {message.isDocumentList ? (
+                  <div className="document-list-content">
+                    {message.text.split('\n').map((line, i) => (
+                      <div key={i} className="document-item">{line}</div>
+                    ))}
+                  </div>
+                ) : (
+                  message.text
+                )}
               </div>
               {message.sources && message.sources.length > 0 && (
                 <div className="message-sources">
