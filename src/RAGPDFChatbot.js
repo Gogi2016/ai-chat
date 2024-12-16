@@ -148,7 +148,8 @@ const RAGPDFChatbot = () => {
 
       const botMessage = { 
         sender: 'bot', 
-        text: response.data.response || 'No response received from the server.' 
+        text: response.data.response || 'No response received from the server.',
+        sources: response.data.sources || [] 
       };
       setChatHistory(prev => [...prev, botMessage]);
 
@@ -271,11 +272,28 @@ const RAGPDFChatbot = () => {
         {/* Chat History */}
         <div className="chat-history">
           {chatHistory.map((message, index) => (
-            <div 
-              key={index} 
-              className={`chat-message ${message.sender}`}
-            >
-              {message.text}
+            <div key={index}>
+              <div className={`chat-message ${message.sender}`}>
+                {message.text}
+              </div>
+              {message.sources && message.sources.length > 0 && (
+                <div className="message-sources">
+                  <h4>Sources:</h4>
+                  {message.sources.map((source, sourceIndex) => (
+                    <div key={sourceIndex} className="source-item">
+                      {source.title && <div className="source-title">{source.title}</div>}
+                      {source.citation && <div className="source-citation">{source.citation}</div>}
+                      {source.content && (
+                        <div className="source-content">
+                          {source.content.length > 200 
+                            ? `${source.content.substring(0, 200)}...` 
+                            : source.content}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
           {isLoading && (
