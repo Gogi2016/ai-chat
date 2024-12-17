@@ -2,7 +2,7 @@
   "name": "ai-chat",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://ai.kwantu.support",
+  "homepage": ".",
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
@@ -18,7 +18,12 @@
   },
   "scripts": {
     "start": "set PORT=3000 && react-scripts start",
+    "start:local": "set PORT=3000 && cross-env NODE_ENV=development REACT_APP_NODE_ENV=development PUBLIC_URL=http://localhost:3000 react-scripts start",
+    "start:server": "set PORT=3000 && cross-env NODE_ENV=development REACT_APP_NODE_ENV=development PUBLIC_URL=http://154.0.164.254:3000 react-scripts start",
     "build": "react-scripts build",
+    "build:local": "cross-env NODE_ENV=development REACT_APP_NODE_ENV=development PUBLIC_URL=http://localhost:3000 react-scripts build",
+    "build:server": "cross-env NODE_ENV=development REACT_APP_NODE_ENV=development PUBLIC_URL=http://154.0.164.254:3000 GENERATE_SOURCEMAP=false react-scripts build",
+    "build:prod": "cross-env NODE_ENV=production REACT_APP_NODE_ENV=production PUBLIC_URL=https://ai.kwantu.support GENERATE_SOURCEMAP=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -41,6 +46,7 @@
     ]
   },
   "devDependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "cross-env": "^7.0.3"
   }
 }
