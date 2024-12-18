@@ -10,6 +10,40 @@ const { Text } = Typography;
 
 const API_BASE_URL = API_CONFIG.SQL_API_URL;
 
+// Language configurations
+const LANGUAGES = {
+  english: {
+    code: 'english',
+    label: 'English',
+    welcome: 'Welcome! Ask me about infrastructure projects in Malawi.',
+    placeholder: 'Ask about infrastructure projects in Malawi...',
+    suggested: 'Suggested questions:',
+    typing: 'Typing...',
+    error_timeout: 'Request timed out after 60 seconds. Please try again.',
+    error_general: 'Failed to get response from chatbot:'
+  },
+  russian: {
+    code: 'russian',
+    label: "Русский",
+    welcome: "Добро пожаловать! Спрашивайте меня об инфраструктурных проектах в Малави.",
+    placeholder: "Спросите об инфраструктурных проектах в Малави...",
+    suggested: "Предлагаемые вопросы:",
+    typing: "Печатает...",
+    error_timeout: "Запрос не отвечен за 60 секунд. Пожалуйста, попробуйте снова.",
+    error_general: "Не удалось получить ответ от чат-бота:"
+  },
+  uzbek: {
+    code: 'uzbek',
+    label: "O'zbek",
+    welcome: "Xush kelibsiz! Malavining infratuzilma loyihalari haqida so'rang.",
+    placeholder: "Malavining infratuzilma loyihalari haqida so'rang...",
+    suggested: "Tavsiya etilgan savollar:",
+    typing: "Yozmoqda...",
+    error_timeout: "Soat 60 dan keyin sozlamadi. Iltimos, qayta urinib ko\"ring.",
+    error_general: "Chatbotdan javob olishda xatolik yuz berdi:"
+  }
+};
+
 const RAGSQLChatbot = () => {
   const [language, setLanguage] = useState('english');
   const [input, setInput] = useState('');
@@ -18,8 +52,23 @@ const RAGSQLChatbot = () => {
   const [suggestions, setSuggestions] = useState([]);
   const chatContainerRef = useRef(null);
 
+  // Initialize chat with welcome message
+  useEffect(() => {
+    setChatHistory([{
+      type: 'response',
+      text: LANGUAGES[language].welcome
+    }]);
+  }, [language]);
+
   const handleLanguageChange = (e) => {
-    setLanguage(e.target.value);
+    const newLanguage = e.target.value;
+    setLanguage(newLanguage);
+    // Reset chat with new language welcome message
+    setChatHistory([{
+      type: 'response',
+      text: LANGUAGES[newLanguage].welcome
+    }]);
+    setSuggestions([]);
   };
 
   const handleSend = async (question) => {
@@ -28,25 +77,10 @@ const RAGSQLChatbot = () => {
       const requestId = `req-${Date.now()}`;
       const startTime = performance.now();
       
-      // Log API configuration
-      console.log(`[${requestId}] API Configuration:`, {
-        baseUrl: API_BASE_URL,
-        environment: process.env.NODE_ENV,
-        apiUrl: API_CONFIG.SQL_API_URL
-      });
-
-      console.log(`[${requestId}] Starting API call to ${API_BASE_URL}/query`);
-      console.log(`[${requestId}] Network Information:`, {
-        onLine: navigator.onLine,
-        connection: navigator.connection ? {
-          effectiveType: navigator.connection.effectiveType,
-          rtt: navigator.connection.rtt,
-          downlink: navigator.connection.downlink
-        } : 'Not available'
-      });
-
+      // Add query to chat history immediately
       setChatHistory((prevHistory) => [...prevHistory, { type: 'query', text: userQuery }]);
       setIsTyping(true);
+      setInput('');
 
       let timeoutCounter = 0;
       const checkConnectionInterval = setInterval(() => {
@@ -101,26 +135,11 @@ const RAGSQLChatbot = () => {
         const fetchEndTime = performance.now();
         console.log(`[${requestId}] Fetch completed in ${(fetchEndTime - fetchStartTime).toFixed(2)}ms`);
 
-        // Test server response time with a GET request
-        try {
-          const serverCheckStart = performance.now();
-          await fetch(`${API_BASE_URL}/status`, {
-            method: 'GET'
-          });
-          const serverCheckEnd = performance.now();
-          console.log(`[${requestId}] Server response time: ${(serverCheckEnd - serverCheckStart).toFixed(2)}ms`);
-        } catch (error) {
-          console.error(`[${requestId}] Server check failed:`, error);
-        }
-
-        console.log(`[${requestId}] Response status:`, response.status);
-        const responseText = await response.text();
-        console.log(`[${requestId}] Raw response:`, responseText);
-
         if (!response.ok) {
+          const errorText = await response.text();
           let errorMessage = 'Network response was not ok';
           try {
-            const errorData = JSON.parse(responseText);
+            const errorData = JSON.parse(errorText);
             errorMessage = errorData?.detail || errorMessage;
           } catch (e) {
             console.error(`[${requestId}] Error parsing error response:`, e);
@@ -128,22 +147,17 @@ const RAGSQLChatbot = () => {
           throw new Error(errorMessage);
         }
 
-        const data = JSON.parse(responseText);
+        const data = await response.json();
         console.log(`[${requestId}] Parsed response:`, data);
         
-        if (data.processing_time) {
-          console.log(`[${requestId}] Backend processing time:`, {
-            total: data.processing_time,
-            operations: data.operation_times
-          });
-        }
-
+        // Add response to chat history
         setChatHistory((prevHistory) => [...prevHistory, { 
-          type: 'response', 
-          text: data.answer || 'No response received',
+          type: 'response',
+          text: data.response || data.answer || 'No response received',
           error: data.error
         }]);
         
+        // Update suggested questions if available
         if (data.suggested_questions && data.suggested_questions.length > 0) {
           setSuggestions(data.suggested_questions);
         }
@@ -155,11 +169,9 @@ const RAGSQLChatbot = () => {
         clearInterval(checkConnectionInterval);
         const endTime = performance.now();
         
-        // Enhanced error logging
-        const errorDetails = {
+        console.error(`[${requestId}] Request failed:`, {
           name: error.name,
           message: error.message,
-          stack: error.stack,
           timings: {
             totalTime: (endTime - startTime).toFixed(2),
             atTime: new Date().toISOString()
@@ -172,22 +184,19 @@ const RAGSQLChatbot = () => {
               downlink: navigator.connection.downlink
             } : 'Not available'
           }
-        };
-
-        console.error(`[${requestId}] Request failed:`, errorDetails);
+        });
 
         const errorMessage = error.name === 'AbortError' 
-          ? `Request timed out after 60 seconds. Please try again. Network status: ${navigator.onLine ? 'Online' : 'Offline'}`
-          : `Failed to get response from chatbot: ${error.message}`;
+          ? `${LANGUAGES[language].error_timeout}`
+          : `${LANGUAGES[language].error_general}: ${error.message}`;
         
         message.error(errorMessage);
         setChatHistory((prevHistory) => [...prevHistory, { 
           type: 'error', 
-          text: `Error: ${errorMessage}`
+          text: errorMessage
         }]);
       } finally {
         setIsTyping(false);
-        setInput('');
       }
     }
   };
@@ -213,8 +222,9 @@ const RAGSQLChatbot = () => {
           <Text>Select Language / Выберите язык / Tilni tanlang</Text>
           <div style={{ marginTop: '10px' }}>
             <Radio.Group value={language} onChange={handleLanguageChange}>
-              <Radio value="english">English</Radio>
-              <Radio value="chichewa">Chichewa</Radio>
+              <Radio value="english">{LANGUAGES.english.label}</Radio>
+              <Radio value="russian">{LANGUAGES.russian.label}</Radio>
+              <Radio value="uzbek">{LANGUAGES.uzbek.label}</Radio>
             </Radio.Group>
           </div>
         </div>
@@ -238,24 +248,19 @@ const RAGSQLChatbot = () => {
               <List.Item className={`message ${item.type}`}>
                 <div className={`message-content ${item.type}`}>
                   <p>{item.text}</p>
-                  {item.context && (
-                    <div className="context-info">
-                      <small>Source: {item.context}</small>
-                    </div>
-                  )}
                 </div>
               </List.Item>
             )}
           />
           {isTyping && (
             <div className="typing-indicator">
-              <Spin size="small" /> Typing...
+              <Spin size="small" /> {LANGUAGES[language].typing}
             </div>
           )}
         </div>
 
         <div style={{ marginTop: '20px', marginBottom: '20px' }}>
-          <Text strong>Suggested questions:</Text>
+          <Text strong>{LANGUAGES[language].suggested}</Text>
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
             {(suggestions.length > 0 ? suggestions : suggestedQuestions).map((question, index) => (
               <Button
@@ -282,7 +287,7 @@ const RAGSQLChatbot = () => {
           <TextArea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask about infrastructure projects in Malawi..."
+            placeholder={LANGUAGES[language].placeholder}
             autoSize={{ minRows: 1, maxRows: 4 }}
             onPressEnter={(e) => {
               if (!e.shiftKey) {
