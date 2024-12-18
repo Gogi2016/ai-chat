@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Layout, Input, Button, List, Spin, message, Radio, Typography } from 'antd';
+import { Layout, Input, Button, List, Spin, message, Radio, Typography, Switch } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
 import { API_CONFIG } from './config/config';
 import './App.css';
@@ -43,11 +43,50 @@ const LANGUAGES = {
     placeholder: "Malavining infratuzilma loyihalari haqida so'rang...",
     suggested: "Tavsiya etilgan savollar:",
     typing: "Yozmoqda...",
-    error_timeout: "Soat 60 dan keyin sozlamadi. Iltimos, qayta urinib ko\"ring.",
+    error_timeout: "So'rov 60 soniyadan keyin tugadi. Iltimos, qayta urinib ko'ring.",
     error_general: "Chatbotdan javob olishda xatolik yuz berdi:",
     no_response: "Javob olishda xatolik yuz berdi",
     requires_translation: true
   }
+};
+
+// LLM Configuration
+const LLM_CONFIG = {
+  enabled: true,
+  model: "phi-2",
+  temperature: 0.7,
+  max_tokens: 500,
+  tasks: {
+    query_enhancement: true,    // Enhance user queries
+    response_formatting: true,  // Format responses
+    context_analysis: true,     // Analyze chat context
+    suggestion_generation: true // Generate contextual suggestions
+  }
+};
+
+// Suggested questions for each language
+const suggestedQuestions = {
+  english: [
+    "Show me infrastructure projects in Malawi",
+    "What are the project sectors?",
+    "Show projects by region",
+    "List projects in Northern Region",
+    "What is the status of education projects?"
+  ],
+  russian: [
+    "Покажите инфраструктурные проекты в Малави",
+    "Какие есть секторы проектов?",
+    "Покажите проекты по регионам",
+    "Покажите проекты в Северном регионе",
+    "Какой статус образовательных проектов?"
+  ],
+  uzbek: [
+    "Malavining infratuzilma loyihalarini ko'rsating",
+    "Loyiha sektorlari qanday?",
+    "Hududlar bo'yicha loyihalarni ko'rsating",
+    "Shimoliy mintaqadagi loyihalarni ko'rsating",
+    "Ta'lim loyihalarining holati qanday?"
+  ]
 };
 
 const RAGSQLChatbot = () => {
@@ -56,6 +95,8 @@ const RAGSQLChatbot = () => {
   const [chatHistory, setChatHistory] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
+  const [useLLM, setUseLLM] = useState(true);
+  const [llmStatus, setLLMStatus] = useState({ processing: false, task: null });
   const chatContainerRef = useRef(null);
 
   // Initialize chat with welcome message
@@ -84,24 +125,23 @@ const RAGSQLChatbot = () => {
       const startTime = performance.now();
       
       // Add query to chat history immediately
-      setChatHistory((prevHistory) => [...prevHistory, { type: 'query', text: userQuery }]);
+      setChatHistory((prevHistory) => [...prevHistory, { 
+        type: 'query', 
+        text: userQuery,
+        language: language
+      }]);
+      
       setIsTyping(true);
       setInput('');
 
-      let timeoutCounter = 0;
-      const checkConnectionInterval = setInterval(() => {
-        timeoutCounter += 1;
-        console.log(`[${requestId}] Connection check at ${timeoutCounter}s:`, {
-          online: navigator.onLine,
-          timeElapsed: `${timeoutCounter} seconds`
-        });
-      }, 1000);
+      if (useLLM) {
+        setLLMStatus({ processing: true, task: 'Processing with LLM...' });
+      }
 
       try {
         const controller = new AbortController();
         let timeoutId;
 
-        // Create a promise that rejects after timeout
         const timeoutPromise = new Promise((_, reject) => {
           timeoutId = setTimeout(() => {
             controller.abort();
@@ -109,10 +149,9 @@ const RAGSQLChatbot = () => {
           }, 60000);
         });
 
-        console.log(`[${requestId}] Initiating fetch call...`);
+        console.log(`[${requestId}] Initiating fetch call with LLM:`, useLLM);
         const fetchStartTime = performance.now();
 
-        // Race between fetch and timeout
         const response = await Promise.race([
           fetch(`${API_BASE_URL}/query`, {
             method: 'POST',
@@ -130,7 +169,15 @@ const RAGSQLChatbot = () => {
               language: LANGUAGES[language].code,
               session_id: requestId,
               require_translation: LANGUAGES[language].requires_translation,
-              include_language_suggestions: true
+              include_language_suggestions: true,
+              llm_config: useLLM ? {
+                ...LLM_CONFIG,
+                context: chatHistory.slice(-5).map(msg => ({
+                  role: msg.type === 'query' ? 'user' : 'assistant',
+                  content: msg.text,
+                  language: msg.language
+                }))
+              } : null
             }),
             signal: controller.signal
           }),
@@ -138,8 +185,6 @@ const RAGSQLChatbot = () => {
         ]);
 
         clearTimeout(timeoutId);
-        clearInterval(checkConnectionInterval);
-
         const fetchEndTime = performance.now();
         console.log(`[${requestId}] Fetch completed in ${(fetchEndTime - fetchStartTime).toFixed(2)}ms`);
 
@@ -158,42 +203,54 @@ const RAGSQLChatbot = () => {
         const data = await response.json();
         console.log(`[${requestId}] Parsed response:`, data);
         
-        // Add response to chat history
+        // Handle LLM processing results
+        if (data.llm_processing) {
+          console.log(`[${requestId}] LLM Processing:`, data.llm_processing);
+          
+          // Update query if it was enhanced
+          if (data.llm_processing.enhanced_query) {
+            setChatHistory((prevHistory) => {
+              const newHistory = [...prevHistory];
+              const lastQuery = newHistory[newHistory.length - 1];
+              if (lastQuery.type === 'query') {
+                lastQuery.enhanced = true;
+                lastQuery.original = lastQuery.text;
+                lastQuery.text = data.llm_processing.enhanced_query;
+              }
+              return newHistory;
+            });
+          }
+        }
+
+        // Add response to chat history with translation tracking
         setChatHistory((prevHistory) => [...prevHistory, { 
           type: 'response',
           text: data.response || data.answer || LANGUAGES[language].no_response,
           error: data.error,
-          language: language
+          language: language,
+          translated: LANGUAGES[language].requires_translation && data.translated,
+          original_language: data.original_language,
+          llm_processed: data.llm_processing?.response_formatted || false
         }]);
         
-        // Update suggested questions if available and ensure they're in the correct language
-        if (data.suggested_questions && data.suggested_questions.length > 0) {
-          // If we're in Russian or Uzbek mode, use the translated suggestions from the API
-          // Otherwise, use the English suggestions
-          if (language === 'russian') {
-            setSuggestions(data.suggested_questions_ru || suggestedQuestions.russian);
-          } else if (language === 'uzbek') {
-            setSuggestions(data.suggested_questions_uz || suggestedQuestions.uzbek);
-          } else {
-            setSuggestions(data.suggested_questions || suggestedQuestions.english);
-          }
-        } else {
-          // Fallback to our predefined translated questions
-          setSuggestions(suggestedQuestions[language]);
+        // Update suggested questions with language-specific handling
+        if (data.suggested_questions) {
+          setSuggestions(
+            language === 'uzbek' && data.suggested_questions_uz ? 
+            data.suggested_questions_uz : 
+            data.suggested_questions
+          );
         }
 
         const endTime = performance.now();
         console.log(`[${requestId}] Total request time: ${(endTime - startTime).toFixed(2)}ms`);
 
       } catch (error) {
-        clearInterval(checkConnectionInterval);
-        const endTime = performance.now();
-        
         console.error(`[${requestId}] Request failed:`, {
           name: error.name,
           message: error.message,
           timings: {
-            totalTime: (endTime - startTime).toFixed(2),
+            totalTime: (performance.now() - startTime).toFixed(2),
             atTime: new Date().toISOString()
           },
           network: {
@@ -217,6 +274,7 @@ const RAGSQLChatbot = () => {
         }]);
       } finally {
         setIsTyping(false);
+        setLLMStatus({ processing: false, task: null });
       }
     }
   };
@@ -227,35 +285,58 @@ const RAGSQLChatbot = () => {
     }
   }, [chatHistory]);
 
-  const suggestedQuestions = {
-    english: [
-      "Show me infrastructure projects in Malawi",
-      "What are the project sectors?",
-      "Show projects by region",
-      "List projects in Northern Region",
-      "What is the status of education projects?"
-    ],
-    russian: [
-      "Покажите инфраструктурные проекты в Малави",
-      "Какие есть секторы проектов?",
-      "Покажите проекты по регионам",
-      "Покажите проекты в Северном регионе",
-      "Какой статус образовательных проектов?"
-    ],
-    uzbek: [
-      "Malavining infratuzilma loyihalarini ko'rsating",
-      "Loyiha sektorlari qanday?",
-      "Hududlar bo'yicha loyihalarni ko'rsating",
-      "Shimoliy mintaqadagi loyihalarni ko'rsating",
-      "Ta'lim loyihalarining holati qanday?"
-    ]
+  // Add formatResponse function
+  const formatResponse = (text) => {
+    if (!text) return '';
+
+    // Format project statistics
+    text = text.replace(
+      /(\d+)\s+projects?/gi,
+      '<strong>$1</strong> projects'
+    );
+
+    // Format percentages
+    text = text.replace(
+      /(\d+(?:\.\d+)?%)/g,
+      '<strong>$1</strong>'
+    );
+
+    // Format monetary values
+    text = text.replace(
+      /(MK\s*\d+(?:,\d{3})*(?:\.\d{2})?)/g,
+      '<strong>$1</strong>'
+    );
+
+    // Format section headers
+    text = text.replace(
+      /(Summary:|Project Status:|Location:|Sector:|Budget:|Completion:)/g,
+      '<br/><strong>$1</strong>'
+    );
+
+    // Convert bullet points
+    text = text.replace(/•/g, '◆');
+    
+    // Add line breaks for readability
+    text = text.replace(/\./g, '.<br/>');
+    
+    return text;
   };
 
   return (
     <Layout className="chat-container">
       <Content style={{ padding: '24px', height: '100vh' }}>
         <div style={{ marginTop: '20px', marginBottom: '20px' }}>
-          <Text>Select Language / Выберите язык / Tilni tanlang</Text>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <Text>Select Language / Выберите язык / Tilni tanlang</Text>
+            <div>
+              <Text style={{ marginRight: '8px' }}>LLM Processing:</Text>
+              <Switch
+                checked={useLLM}
+                onChange={setUseLLM}
+                size="small"
+              />
+            </div>
+          </div>
           <div style={{ marginTop: '10px' }}>
             <Radio.Group value={language} onChange={handleLanguageChange}>
               <Radio value="english">{LANGUAGES.english.label}</Radio>
@@ -264,6 +345,13 @@ const RAGSQLChatbot = () => {
             </Radio.Group>
           </div>
         </div>
+
+        {llmStatus.processing && (
+          <div className="llm-status" style={{ marginBottom: '10px', textAlign: 'center' }}>
+            <Spin size="small" />
+            <Text type="secondary" style={{ marginLeft: '8px' }}>{llmStatus.task}</Text>
+          </div>
+        )}
 
         <div
           ref={chatContainerRef}
@@ -283,7 +371,24 @@ const RAGSQLChatbot = () => {
             renderItem={(item) => (
               <List.Item className={`message ${item.type}`}>
                 <div className={`message-content ${item.type}`}>
-                  <p>{item.text}</p>
+                  {item.type === 'query' && item.enhanced && (
+                    <div className="enhanced-query-info" style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>
+                      Enhanced by LLM from: {item.original}
+                    </div>
+                  )}
+                  {item.type === 'response' && item.translated && (
+                    <div className="translation-info" style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>
+                      Translated from {item.original_language || 'English'}
+                    </div>
+                  )}
+                  {item.type === 'response' ? (
+                    <div 
+                      className={`formatted-response ${item.llm_processed ? 'llm-processed' : ''} ${item.translated ? 'translated' : ''}`}
+                      dangerouslySetInnerHTML={{ __html: formatResponse(item.text) }}
+                    />
+                  ) : (
+                    <p>{item.text}</p>
+                  )}
                 </div>
               </List.Item>
             )}
