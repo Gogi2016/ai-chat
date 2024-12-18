@@ -20,17 +20,21 @@ const LANGUAGES = {
     suggested: 'Suggested questions:',
     typing: 'Typing...',
     error_timeout: 'Request timed out after 60 seconds. Please try again.',
-    error_general: 'Failed to get response from chatbot:'
+    error_general: 'Failed to get response from chatbot:',
+    no_response: 'No response received',
+    requires_translation: false
   },
   russian: {
     code: 'russian',
     label: "Русский",
     welcome: "Добро пожаловать! Спрашивайте меня об инфраструктурных проектах в Малави.",
-    placeholder: "Спросите об инфраструктурных проект��х в Малави...",
+    placeholder: "Спросите об инфраструктурных проектах в Малави...",
     suggested: "Предлагаемые вопросы:",
     typing: "Печатает...",
     error_timeout: "Запрос не отвечен за 60 секунд. Пожалуйста, попробуйте снова.",
-    error_general: "Не удалось получить ответ от чат-бота:"
+    error_general: "Не удалось получить ответ от чат-бота:",
+    no_response: "Ответ не получен",
+    requires_translation: false
   },
   uzbek: {
     code: 'uzbek',
@@ -40,7 +44,9 @@ const LANGUAGES = {
     suggested: "Tavsiya etilgan savollar:",
     typing: "Yozmoqda...",
     error_timeout: "Soat 60 dan keyin sozlamadi. Iltimos, qayta urinib ko\"ring.",
-    error_general: "Chatbotdan javob olishda xatolik yuz berdi:"
+    error_general: "Chatbotdan javob olishda xatolik yuz berdi:",
+    no_response: "Javob olishda xatolik yuz berdi",
+    requires_translation: true
   }
 };
 
@@ -121,8 +127,10 @@ const RAGSQLChatbot = () => {
             mode: 'cors',
             body: JSON.stringify({
               message: userQuery,
-              language: language,
-              session_id: requestId
+              language: LANGUAGES[language].code,
+              session_id: requestId,
+              require_translation: LANGUAGES[language].requires_translation,
+              include_language_suggestions: true
             }),
             signal: controller.signal
           }),
@@ -153,13 +161,25 @@ const RAGSQLChatbot = () => {
         // Add response to chat history
         setChatHistory((prevHistory) => [...prevHistory, { 
           type: 'response',
-          text: data.response || data.answer || 'No response received',
-          error: data.error
+          text: data.response || data.answer || LANGUAGES[language].no_response,
+          error: data.error,
+          language: language
         }]);
         
-        // Update suggested questions if available
+        // Update suggested questions if available and ensure they're in the correct language
         if (data.suggested_questions && data.suggested_questions.length > 0) {
-          setSuggestions(data.suggested_questions);
+          // If we're in Russian or Uzbek mode, use the translated suggestions from the API
+          // Otherwise, use the English suggestions
+          if (language === 'russian') {
+            setSuggestions(data.suggested_questions_ru || suggestedQuestions.russian);
+          } else if (language === 'uzbek') {
+            setSuggestions(data.suggested_questions_uz || suggestedQuestions.uzbek);
+          } else {
+            setSuggestions(data.suggested_questions || suggestedQuestions.english);
+          }
+        } else {
+          // Fallback to our predefined translated questions
+          setSuggestions(suggestedQuestions[language]);
         }
 
         const endTime = performance.now();
