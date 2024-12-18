@@ -26,7 +26,7 @@ const LANGUAGES = {
     code: 'russian',
     label: "Русский",
     welcome: "Добро пожаловать! Спрашивайте меня об инфраструктурных проектах в Малави.",
-    placeholder: "Спросите об инфраструктурных проектах в Малави...",
+    placeholder: "Спросите об инфраструктурных проект��х в Малави...",
     suggested: "Предлагаемые вопросы:",
     typing: "Печатает...",
     error_timeout: "Запрос не отвечен за 60 секунд. Пожалуйста, попробуйте снова.",
@@ -207,13 +207,29 @@ const RAGSQLChatbot = () => {
     }
   }, [chatHistory]);
 
-  const suggestedQuestions = [
-    "Show me infrastructure projects in Malawi",
-    "What are the project sectors?",
-    "Show projects by region",
-    "List projects in Northern Region",
-    "What is the status of education projects?"
-  ];
+  const suggestedQuestions = {
+    english: [
+      "Show me infrastructure projects in Malawi",
+      "What are the project sectors?",
+      "Show projects by region",
+      "List projects in Northern Region",
+      "What is the status of education projects?"
+    ],
+    russian: [
+      "Покажите инфраструктурные проекты в Малави",
+      "Какие есть секторы проектов?",
+      "Покажите проекты по регионам",
+      "Покажите проекты в Северном регионе",
+      "Какой статус образовательных проектов?"
+    ],
+    uzbek: [
+      "Malavining infratuzilma loyihalarini ko'rsating",
+      "Loyiha sektorlari qanday?",
+      "Hududlar bo'yicha loyihalarni ko'rsating",
+      "Shimoliy mintaqadagi loyihalarni ko'rsating",
+      "Ta'lim loyihalarining holati qanday?"
+    ]
+  };
 
   return (
     <Layout className="chat-container">
@@ -262,7 +278,7 @@ const RAGSQLChatbot = () => {
         <div style={{ marginTop: '20px', marginBottom: '20px' }}>
           <Text strong>{LANGUAGES[language].suggested}</Text>
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
-            {(suggestions.length > 0 ? suggestions : suggestedQuestions).map((question, index) => (
+            {(suggestions.length > 0 ? suggestions : suggestedQuestions[language]).map((question, index) => (
               <Button
                 key={index}
                 type="default"
