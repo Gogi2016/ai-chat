@@ -481,3 +481,39 @@ body {
 .formatted-response.translated strong {
   color: #d46b08;
 }
+
+.enhanced-query {
+  background-color: #f5f5f5;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.enhanced-query .ant-typography {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.message-text.llm-processed {
+  background-color: #f0f7ff;
+  padding: 12px;
+  border-radius: 4px;
+  border-left: 3px solid #1890ff;
+}
+
+.suggested-questions {
+  margin-top: 12px;
+  padding: 8px;
+  background-color: #fafafa;
+  border-radius: 4px;
+}
+
+.suggested-questions .ant-list-item {
+  padding: 4px 0;
+}
+
+.translation-indicator {
+  display: block;
+  margin-top: 4px;
+  font-style: italic;
+}

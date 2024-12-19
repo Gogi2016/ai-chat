@@ -53,18 +53,9 @@ const LANGUAGES = {
 // LLM Configuration
 const LLM_CONFIG = {
   enabled: true,
-  model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
+  model: "mixtral-8x7b",
   temperature: 0.7,
-  max_tokens: 1500,
-  top_k: 50,
-  top_p: 0.7,
-  repetition_penalty: 1.1,
-  tasks: {
-    query_enhancement: true,    // Enhance user queries
-    response_formatting: true,  // Format responses
-    context_analysis: true,     // Analyze chat context
-    suggestion_generation: true // Generate contextual suggestions
-  }
+  tasks: ["query_enhancement", "response_formatting", "follow_up_suggestions"]
 };
 
 // Suggested questions for each language
@@ -105,8 +96,10 @@ const RAGSQLChatbot = () => {
   // Initialize chat with welcome message
   useEffect(() => {
     setChatHistory([{
-      type: 'response',
-      text: LANGUAGES[language].welcome
+      text: LANGUAGES[language].welcome,
+      isUser: false,
+      timestamp: new Date().toISOString(),
+      isFormatted: false
     }]);
   }, [language]);
 
@@ -115,48 +108,28 @@ const RAGSQLChatbot = () => {
     setLanguage(newLanguage);
     // Reset chat with new language welcome message
     setChatHistory([{
-      type: 'response',
-      text: LANGUAGES[newLanguage].welcome
+      text: LANGUAGES[newLanguage].welcome,
+      isUser: false,
+      timestamp: new Date().toISOString(),
+      isFormatted: false
     }]);
     setSuggestions([]);
   };
 
-  const handleSend = async (question) => {
-    const userQuery = question || input;
-    if (userQuery.trim()) {
-      const requestId = `req-${Date.now()}`;
-      const startTime = performance.now();
-      
-      // Add query to chat history immediately
-      setChatHistory((prevHistory) => [...prevHistory, { 
-        type: 'query', 
-        text: userQuery,
-        language: language
-      }]);
-      
-      setIsTyping(true);
+  const handleSend = async (message) => {
+    if (message.trim() === '') return;
+
+    const newMessage = {
+      text: message,
+      isUser: true,
+      timestamp: new Date().toISOString()
+    };
+
+    setChatHistory(prevMessages => [...prevMessages, newMessage]);
       setInput('');
 
-      if (useLLM) {
-        setLLMStatus({ processing: true, task: 'Processing with LLM...' });
-      }
-
-      try {
-        const controller = new AbortController();
-        let timeoutId;
-
-        const timeoutPromise = new Promise((_, reject) => {
-          timeoutId = setTimeout(() => {
-            controller.abort();
-            reject(new Error('Request timed out after 60 seconds'));
-          }, 60000);
-        });
-
-        console.log(`[${requestId}] Initiating fetch call with LLM:`, useLLM);
-        const fetchStartTime = performance.now();
-
-        const response = await Promise.race([
-          fetch(`${API_BASE_URL}/query`, {
+    try {
+      const response = await fetch(`${API_BASE_URL}/query`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -168,115 +141,80 @@ const RAGSQLChatbot = () => {
             },
             mode: 'cors',
             body: JSON.stringify({
-              message: userQuery,
+          message: message,
               language: LANGUAGES[language].code,
-              session_id: requestId,
-              require_translation: LANGUAGES[language].requires_translation,
-              include_language_suggestions: true,
-              llm_config: useLLM ? {
-                ...LLM_CONFIG,
-                context: chatHistory.slice(-5).map(msg => ({
-                  role: msg.type === 'query' ? 'user' : 'assistant',
-                  content: msg.text,
-                  language: msg.language
-                }))
-              } : null
-            }),
-            signal: controller.signal
-          }),
-          timeoutPromise
-        ]);
-
-        clearTimeout(timeoutId);
-        const fetchEndTime = performance.now();
-        console.log(`[${requestId}] Fetch completed in ${(fetchEndTime - fetchStartTime).toFixed(2)}ms`);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          let errorMessage = 'Network response was not ok';
-          try {
-            const errorData = JSON.parse(errorText);
-            errorMessage = errorData?.detail || errorMessage;
-          } catch (e) {
-            console.error(`[${requestId}] Error parsing error response:`, e);
-          }
-          throw new Error(errorMessage);
-        }
+          session_id: `req-${Date.now()}`,
+          llm_config: useLLM ? {
+            ...LLM_CONFIG,
+            context: chatHistory.slice(-5).map(msg => ({
+              role: msg.isUser ? 'user' : 'assistant',
+              content: msg.text,
+              language: language
+            }))
+          } : null
+        }),
+      });
 
         const data = await response.json();
-        console.log(`[${requestId}] Parsed response:`, data);
         
-        // Handle LLM processing results
+      // Format the LLM response
+      let formattedResponse = '';
         if (data.llm_processing) {
-          console.log(`[${requestId}] LLM Processing:`, data.llm_processing);
-          
-          // Update query if it was enhanced
-          if (data.llm_processing.enhanced_query) {
-            setChatHistory((prevHistory) => {
-              const newHistory = [...prevHistory];
-              const lastQuery = newHistory[newHistory.length - 1];
-              if (lastQuery.type === 'query') {
-                lastQuery.enhanced = true;
-                lastQuery.original = lastQuery.text;
-                lastQuery.text = data.llm_processing.enhanced_query;
-              }
-              return newHistory;
-            });
-          }
+        formattedResponse = `
+          <div class="llm-processed">
+            ${data.llm_processing.enhanced_query ? 
+              `<div><strong>Enhanced Query:</strong> ${data.llm_processing.enhanced_query}</div>` : ''
+            }
+            ${data.llm_processing.project_details ? `
+            <div><strong>Project Details:</strong></div>
+            ${data.llm_processing.project_details.map(detail => 
+              `<div class="bullet-point">${detail}</div>`
+            ).join('')}
+            ` : ''}
+            ${data.llm_processing.statistics ? `
+              <div><strong>Statistics:</strong></div>
+               ${data.llm_processing.statistics.map(stat => 
+                 `<div class="bullet-point">${stat}</div>`
+              ).join('')}
+            ` : ''}
+            ${data.llm_processing.follow_up_questions ? `
+              <div><strong>Suggested Questions:</strong></div>
+               ${data.llm_processing.follow_up_questions.map(q => 
+                 `<div class="bullet-point">${q}</div>`
+              ).join('')}
+            ` : ''}
+            ${data.llm_processing.translation_info ? 
+              `<span class="translation-indicator">${data.llm_processing.translation_info}</span>` : ''
+            }
+          </div>
+        `;
+
+        // Update suggestions if available
+        if (data.llm_processing.follow_up_questions) {
+          setSuggestions(data.llm_processing.follow_up_questions);
         }
-
-        // Add response to chat history with translation tracking
-        setChatHistory((prevHistory) => [...prevHistory, { 
-          type: 'response',
-          text: data.response || data.answer || LANGUAGES[language].no_response,
-          error: data.error,
-          language: language,
-          translated: LANGUAGES[language].requires_translation && data.translated,
-          original_language: data.original_language,
-          llm_processed: data.llm_processing?.response_formatted || false,
-          enhanced_query: data.llm_processing?.enhanced_query,
-          suggested_questions: data.llm_processing?.suggested_questions
-        }]);
-        
-        // Update suggested questions from LLM if available
-        if (data.llm_processing?.suggested_questions) {
-          setSuggestions(data.llm_processing.suggested_questions);
-        }
-
-        const endTime = performance.now();
-        console.log(`[${requestId}] Total request time: ${(endTime - startTime).toFixed(2)}ms`);
-
-      } catch (error) {
-        console.error(`[${requestId}] Request failed:`, {
-          name: error.name,
-          message: error.message,
-          timings: {
-            totalTime: (performance.now() - startTime).toFixed(2),
-            atTime: new Date().toISOString()
-          },
-          network: {
-            online: navigator.onLine,
-            connection: navigator.connection ? {
-              effectiveType: navigator.connection.effectiveType,
-              rtt: navigator.connection.rtt,
-              downlink: navigator.connection.downlink
-            } : 'Not available'
-          }
-        });
-
-        const errorMessage = error.name === 'AbortError' 
-          ? `${LANGUAGES[language].error_timeout}`
-          : `${LANGUAGES[language].error_general}: ${error.message}`;
-        
-        message.error(errorMessage);
-        setChatHistory((prevHistory) => [...prevHistory, { 
-          type: 'error', 
-          text: errorMessage
-        }]);
-      } finally {
-        setIsTyping(false);
-        setLLMStatus({ processing: false, task: null });
       }
+
+      const botMessage = {
+        text: formattedResponse || formatResponse(data.response),
+        isUser: false,
+        timestamp: new Date().toISOString(),
+        isFormatted: !!formattedResponse,
+        translated: LANGUAGES[language].requires_translation && data.translated,
+        original_language: data.original_language,
+        llm_processed: data.llm_processing ? true : false,
+        suggested_questions: data.llm_processing?.follow_up_questions
+      };
+
+      setChatHistory(prevMessages => [...prevMessages, botMessage]);
+      } catch (error) {
+      console.error('Error:', error);
+      const errorMessage = {
+        text: LANGUAGES[language].error_general + ' ' + error.message,
+        isUser: false,
+        timestamp: new Date().toISOString()
+      };
+      setChatHistory(prevMessages => [...prevMessages, errorMessage]);
     }
   };
 
@@ -322,6 +260,24 @@ const RAGSQLChatbot = () => {
     
     return text;
   };
+
+  // Update the message rendering
+  const renderMessage = (message) => (
+    <div key={message.timestamp} className={`message ${message.isUser ? 'user' : 'bot'}`}>
+      <div className="message-header">
+        <span className="message-sender">{message.isUser ? 'You' : 'Bot'}</span>
+        <span className="message-time">{new Date(message.timestamp).toLocaleTimeString()}</span>
+      </div>
+      {message.isFormatted ? (
+        <div 
+          className="message-text llm-processed"
+          dangerouslySetInnerHTML={{ __html: message.text }}
+        />
+      ) : (
+        <div className="message-text">{message.text}</div>
+      )}
+    </div>
+  );
 
   return (
     <Layout className="chat-container">
@@ -369,27 +325,31 @@ const RAGSQLChatbot = () => {
           <List
             dataSource={chatHistory}
             renderItem={(msg, index) => (
-              <List.Item className={`message ${msg.type}`}>
+              <List.Item className={`message ${msg.isUser ? 'user' : 'bot'}`}>
                 <div className="message-content">
-                  {msg.type === 'query' && msg.enhanced && (
-                    <div className="enhanced-query">
-                      <Text type="secondary">Original: {msg.original}</Text>
-                      <Text type="secondary">Enhanced: {msg.text}</Text>
-                    </div>
-                  )}
-                  {!msg.enhanced && (
+                  {msg.isFormatted ? (
                     <div 
-                      className={`message-text ${msg.translated ? 'translated' : ''} ${msg.llm_processed ? 'llm-processed' : ''}`}
-                      dangerouslySetInnerHTML={{ __html: formatResponse(msg.text) }}
-                    >
-                    </div>
-                  )}
+                      className="message-text llm-processed"
+                      dangerouslySetInnerHTML={{ __html: msg.text }}
+                    />
+                  ) : (
+                    <div className={`message-text ${msg.translated ? 'translated' : ''} ${msg.llm_processed ? 'llm-processed' : ''}`}>
+                          {msg.text.split('•').map((section, index) => {
+                            if (index === 0) return <div key={index}>{section}</div>;
+                            return (
+                              <div key={index} className="bullet-point">
+                                • {section}
+                              </div>
+                            );
+                          })}
                   {msg.translated && (
                     <Text type="secondary" className="translation-indicator">
                       (Translated from {msg.original_language || 'English'})
                     </Text>
+                      )}
+                    </div>
                   )}
-                  {msg.type === 'response' && msg.suggested_questions && msg.suggested_questions.length > 0 && (
+                  {msg.suggested_questions && msg.suggested_questions.length > 0 && (
                     <div className="suggested-questions">
                       <Text strong>{LANGUAGES[language].suggested}</Text>
                       <List
@@ -449,14 +409,14 @@ const RAGSQLChatbot = () => {
             onPressEnter={(e) => {
               if (!e.shiftKey) {
                 e.preventDefault();
-                handleSend();
+                handleSend(input);
               }
             }}
           />
           <Button
             type="primary"
             icon={<SendOutlined />}
-            onClick={() => handleSend()}
+            onClick={() => handleSend(input)}
             style={{ marginTop: '10px', float: 'right' }}
           >
             Send
