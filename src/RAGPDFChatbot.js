@@ -3,6 +3,8 @@ import { Upload, Button, Radio, Input, Layout, List, message, Divider, Typograph
 import { UploadOutlined, SendOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { API_CONFIG } from './config/config';
+import DOMPurify from 'dompurify';
+import SourceRenderer from './components/SourceRenderer';
 
 const { Content, Sider } = Layout;
 const { TextArea } = Input;
@@ -56,7 +58,7 @@ const RAGPDFChatbot = () => {
         "What are the recommendations for improving employment formality?"
       ],
       ru: [
-        "Каковы основные программы социальной защиты в Узбекистане?",
+        "Каковы основные программы социальной ��ащиты в Узбекистане?",
         "Расскажите об услугах для людей с инвалидностью в Узбекистане",
         "Каковы основные выводы анализа влияния COVID-19?",
         "Обобщите результаты реформы энергетических субсидий",
@@ -103,11 +105,12 @@ const RAGPDFChatbot = () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/documents`);
       if (response.data.status === 'success') {
-        setEmbeddedDocuments(response.data.documents);
+        setEmbeddedDocuments(response.data.documents || []);
       }
     } catch (error) {
       console.error('Error fetching embedded documents:', error);
-      message.error('Failed to load embedded documents');
+      // Don't show error message to user, just set empty documents
+      setEmbeddedDocuments([]);
     }
   };
 
@@ -304,6 +307,26 @@ const RAGPDFChatbot = () => {
   };
 
   const visibleFiles = showMore ? uploadedFiles : uploadedFiles.slice(0, 3);
+
+  const renderChatMessage = (message) => (
+    <List.Item
+      className={`chat-message ${message.sender}`}
+    >
+      <div>
+        <div>{message.text}</div>
+        {message.sources && <SourceRenderer sources={message.sources} />}
+      </div>
+    </List.Item>
+  );
+
+  const renderChatHistory = () => (
+    <List
+      className="chat-history"
+      itemLayout="horizontal"
+      dataSource={chatHistory}
+      renderItem={message => renderChatMessage(message)}
+    />
+  );
 
   return (
     <Layout style={{ minHeight: '100%', background: '#fff' }}>
