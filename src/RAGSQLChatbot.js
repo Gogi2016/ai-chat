@@ -53,9 +53,12 @@ const LANGUAGES = {
 // LLM Configuration
 const LLM_CONFIG = {
   enabled: true,
-  model: "phi-2",
+  model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
   temperature: 0.7,
-  max_tokens: 500,
+  max_tokens: 1500,
+  top_k: 50,
+  top_p: 0.7,
+  repetition_penalty: 1.1,
   tasks: {
     query_enhancement: true,    // Enhance user queries
     response_formatting: true,  // Format responses
@@ -230,16 +233,14 @@ const RAGSQLChatbot = () => {
           language: language,
           translated: LANGUAGES[language].requires_translation && data.translated,
           original_language: data.original_language,
-          llm_processed: data.llm_processing?.response_formatted || false
+          llm_processed: data.llm_processing?.response_formatted || false,
+          enhanced_query: data.llm_processing?.enhanced_query,
+          suggested_questions: data.llm_processing?.suggested_questions
         }]);
         
-        // Update suggested questions with language-specific handling
-        if (data.suggested_questions) {
-          setSuggestions(
-            language === 'uzbek' && data.suggested_questions_uz ? 
-            data.suggested_questions_uz : 
-            data.suggested_questions
-          );
+        // Update suggested questions from LLM if available
+        if (data.llm_processing?.suggested_questions) {
+          setSuggestions(data.llm_processing.suggested_questions);
         }
 
         const endTime = performance.now();
@@ -366,28 +367,43 @@ const RAGSQLChatbot = () => {
           }}
         >
           <List
-            itemLayout="horizontal"
             dataSource={chatHistory}
-            renderItem={(item) => (
-              <List.Item className={`message ${item.type}`}>
-                <div className={`message-content ${item.type}`}>
-                  {item.type === 'query' && item.enhanced && (
-                    <div className="enhanced-query-info" style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>
-                      Enhanced by LLM from: {item.original}
+            renderItem={(msg, index) => (
+              <List.Item className={`message ${msg.type}`}>
+                <div className="message-content">
+                  {msg.type === 'query' && msg.enhanced && (
+                    <div className="enhanced-query">
+                      <Text type="secondary">Original: {msg.original}</Text>
+                      <Text type="secondary">Enhanced: {msg.text}</Text>
                     </div>
                   )}
-                  {item.type === 'response' && item.translated && (
-                    <div className="translation-info" style={{ fontSize: '12px', color: '#888', marginBottom: '4px' }}>
-                      Translated from {item.original_language || 'English'}
-                    </div>
-                  )}
-                  {item.type === 'response' ? (
+                  {!msg.enhanced && (
                     <div 
-                      className={`formatted-response ${item.llm_processed ? 'llm-processed' : ''} ${item.translated ? 'translated' : ''}`}
-                      dangerouslySetInnerHTML={{ __html: formatResponse(item.text) }}
-                    />
-                  ) : (
-                    <p>{item.text}</p>
+                      className={`message-text ${msg.translated ? 'translated' : ''} ${msg.llm_processed ? 'llm-processed' : ''}`}
+                      dangerouslySetInnerHTML={{ __html: formatResponse(msg.text) }}
+                    >
+                    </div>
+                  )}
+                  {msg.translated && (
+                    <Text type="secondary" className="translation-indicator">
+                      (Translated from {msg.original_language || 'English'})
+                    </Text>
+                  )}
+                  {msg.type === 'response' && msg.suggested_questions && msg.suggested_questions.length > 0 && (
+                    <div className="suggested-questions">
+                      <Text strong>{LANGUAGES[language].suggested}</Text>
+                      <List
+                        size="small"
+                        dataSource={msg.suggested_questions}
+                        renderItem={(question) => (
+                          <List.Item>
+                            <Button type="link" onClick={() => handleSend(question)}>
+                              {question}
+                            </Button>
+                          </List.Item>
+                        )}
+                      />
+                    </div>
                   )}
                 </div>
               </List.Item>
