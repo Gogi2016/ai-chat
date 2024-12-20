@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Radio, Input, Button, Space, Typography, message, Upload, Layout } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import { API_CONFIG } from './config/config';
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
 const { Dragger } = Upload;
 const { Content, Sider } = Layout;
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8002';
+const API_BASE_URL = API_CONFIG.NLP_API_URL;
 
 const NLPDemo = () => {
   const [selectedUseCase, setSelectedUseCase] = useState('summarization');
