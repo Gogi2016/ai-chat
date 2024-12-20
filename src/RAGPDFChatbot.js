@@ -28,6 +28,21 @@ const RAGPDFChatbot = () => {
     fetchEmbeddedDocuments();
   }, []);
 
+  useEffect(() => {
+    // Add event listener for document viewing
+    const handleViewDocument = (event) => {
+      const { fileName, pageNumber } = event.detail;
+      message.info(`Opening ${fileName} at page ${pageNumber}`);
+      // Here you can implement the actual document viewing logic
+      // For example, open a modal with a PDF viewer
+    };
+
+    window.addEventListener('viewDocument', handleViewDocument);
+    return () => {
+      window.removeEventListener('viewDocument', handleViewDocument);
+    };
+  }, []);
+
   // Welcome messages for each language
   const getWelcomeMessages = (lang) => {
     const messages = {

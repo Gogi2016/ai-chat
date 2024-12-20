@@ -519,71 +519,91 @@ body {
 }
 
 /* Source Links */
-.source-link {
+.source-link, .document-link {
   color: #1890ff;
   text-decoration: underline;
   cursor: pointer;
-  margin-right: 10px;
+  display: inline-block;
+  padding: 2px 4px;
+  border-radius: 2px;
+  transition: all 0.3s ease;
 }
 
-.source-link:hover {
+.source-link:hover, .document-link:hover {
   color: #40a9ff;
-}
-
-.document-link {
-  color: #1890ff;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.document-link:hover {
-  color: #40a9ff;
+  background-color: #e6f7ff;
 }
 
 .sources-section {
-  margin-top: 10px;
-  padding: 10px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e8e8e8;
+}
+
+.sources-section .ant-typography {
+  color: #595959;
+  font-size: 0.9em;
+  margin-bottom: 8px;
 }
 
 .source-item {
-  margin-bottom: 5px;
-  font-size: 0.9em;
-  color: #666;
+  padding: 8px !important;
+  margin: 4px 0;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
 }
 
 .source-item:hover {
   background-color: #e6f7ff;
 }
 
-.clickable-source {
-  cursor: pointer;
+.source-item a {
   color: #1890ff;
+  text-decoration: none;
+  font-size: 0.9em;
+  display: block;
+  width: 100%;
+}
+
+.source-item a:hover {
   text-decoration: underline;
 }
 
-.clickable-source:hover {
-  color: #40a9ff;
+.clickable-source {
+  display: block;
+  width: 100%;
 }
 
-/* Chat Message Sources */
-.chat-message .sources-section {
-  margin-top: 8px;
-  font-size: 0.9em;
+/* Remove default List.Item padding */
+.sources-section .ant-list-item {
+  padding: 0 !important;
+  border: none !important;
 }
 
-.chat-message .source-item {
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
+/* Add subtle divider between sources */
+.source-item:not(:last-child) {
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.chat-message .source-item:hover {
-  background-color: #e6f7ff;
+/* Style for document links */
+.document-link {
+  display: inline-flex;
+  align-items: center;
+  color: #1890ff;
 }
 
-.chat-message .clickable-source {
-  display: inline-block;
-  padding: 2px 4px;
+.document-link:before {
+  content: "📄";
+  margin-right: 6px;
+  font-size: 1em;
+}
+
+/* Style for external links */
+.source-link:before {
+  content: "🔗";
+  margin-right: 6px;
+  font-size: 1em;
 }

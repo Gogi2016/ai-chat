@@ -1,5 +1,5 @@
 import React from 'react';
-import { List, Typography, message } from 'antd';
+import { List, Typography } from 'antd';
 import DOMPurify from 'dompurify';
 
 const { Text } = Typography;
@@ -7,26 +7,36 @@ const { Text } = Typography;
 const SourceRenderer = ({ sources }) => {
   if (!sources || sources.length === 0) return null;
 
-  const handleSourceClick = (source) => {
+  const handleSourceClick = (e, source) => {
+    // Prevent default link behavior
+    e.preventDefault();
+    
     if (!source.is_clickable) return;
 
     if (source.url) {
-      // Open URL in new tab
       window.open(source.url, '_blank', 'noopener,noreferrer');
     } else if (source.file_name) {
-      // Handle local document click
-      const page = source.page_number;
-      const file = source.file_name;
-      console.log(`Opening document: ${file} at page ${page}`);
-      message.info(`Opening ${file} at page ${page}`);
-      
-      // You can implement document viewing logic here
-      // For example, dispatch an event or call a callback
       const event = new CustomEvent('viewDocument', {
-        detail: { fileName: file, pageNumber: page }
+        detail: { 
+          fileName: source.file_name, 
+          pageNumber: source.page_number 
+        }
       });
       window.dispatchEvent(event);
     }
+  };
+
+  // Configure DOMPurify
+  DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+    if ('target' in node) {
+      node.setAttribute('target', '_blank');
+      node.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+
+  const purifyConfig = {
+    ALLOWED_TAGS: ['a', 'p', 'span', 'div', 'br'],
+    ALLOWED_ATTR: ['href', 'class', 'data-page', 'data-file', 'target', 'rel'],
   };
 
   return (
@@ -36,13 +46,15 @@ const SourceRenderer = ({ sources }) => {
         size="small"
         dataSource={sources}
         renderItem={source => (
-          <List.Item className="source-item">
+          <List.Item 
+            className="source-item"
+            onClick={(e) => handleSourceClick(e, source)}
+          >
             <div 
-              onClick={() => handleSourceClick(source)}
               className={source.is_clickable ? 'clickable-source' : ''}
               dangerouslySetInnerHTML={{ 
-                __html: DOMPurify.sanitize(source.citation) 
-              }} 
+                __html: DOMPurify.sanitize(source.citation, purifyConfig)
+              }}
             />
           </List.Item>
         )}
