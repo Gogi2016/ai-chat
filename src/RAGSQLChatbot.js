@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Layout, Input, Button, List, Spin, message, Radio, Typography, Switch } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
 import { API_CONFIG } from './config/config';
 import './App.css';
+import './styles/rag-sql.css';
 
 const { Content } = Layout;
 const { TextArea } = Input;
@@ -15,8 +16,8 @@ const LANGUAGES = {
   english: {
     code: 'english',
     label: 'English',
-    welcome: 'Welcome! Ask me about infrastructure projects in Malawi.',
-    placeholder: 'Ask about infrastructure projects in Malawi...',
+    welcome: 'Welcome! Ask me about infrastructure projects.',
+    placeholder: 'Ask about infrastructure projects...',
     suggested: 'Suggested questions:',
     typing: 'Typing...',
     error_timeout: 'Request timed out after 60 seconds. Please try again.',
@@ -27,8 +28,8 @@ const LANGUAGES = {
   russian: {
     code: 'russian',
     label: "Русский",
-    welcome: "Добро пожаловать! Спрашивайте меня об инфраструктурных проектах в Малави.",
-    placeholder: "Спросите об инфраструктурных проектах в Малави...",
+    welcome: "Добро пожаловать! Спрашивайте меня об инфраструктурных проектах.",
+    placeholder: "Спросите об инфраструктурных проектах...",
     suggested: "Предлагаемые вопросы:",
     typing: "Печатает...",
     error_timeout: "Запрос не отвечен за 60 секунд. Пожалуйста, попробуйте снова.",
@@ -39,8 +40,8 @@ const LANGUAGES = {
   uzbek: {
     code: 'uzbek',
     label: "O'zbek",
-    welcome: "Xush kelibsiz! Malavining infratuzilma loyihalari haqida so'rang.",
-    placeholder: "Malavining infratuzilma loyihalari haqida so'rang...",
+    welcome: "Xush kelibsiz! Infratuzilma loyihalari haqida so'rang.",
+    placeholder: "Infratuzilma loyihalari haqida so'rang...",
     suggested: "Tavsiya etilgan savollar:",
     typing: "Yozmoqda...",
     error_timeout: "So'rov 60 soniyadan keyin tugadi. Iltimos, qayta urinib ko'ring.",
@@ -61,21 +62,21 @@ const LLM_CONFIG = {
 // Suggested questions for each language
 const suggestedQuestions = {
   english: [
-    "Show me infrastructure projects in Malawi",
+    "Show me all infrastructure projects",
     "What are the project sectors?",
     "Show projects by region",
     "List projects in Northern Region",
     "What is the status of education projects?"
   ],
   russian: [
-    "Покажите инфраструктурные проекты в Малави",
+    "Покажите все инфраструктурные проекты",
     "Какие есть секторы проектов?",
     "Покажите проекты по регионам",
     "Покажите проекты в Северном регионе",
     "Какой статус образовательных проектов?"
   ],
   uzbek: [
-    "Malavining infratuzilma loyihalarini ko'rsating",
+    "Barcha infratuzilma loyihalarini ko'rsating",
     "Loyiha sektorlari qanday?",
     "Hududlar bo'yicha loyihalarni ko'rsating",
     "Shimoliy mintaqadagi loyihalarni ko'rsating",
@@ -90,7 +91,8 @@ const RAGSQLChatbot = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
   const [useLLM, setUseLLM] = useState(true);
-  const [llmStatus, setLLMStatus] = useState({ processing: false, task: null });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastQuery, setLastQuery] = useState('');
   const chatContainerRef = useRef(null);
 
   // Initialize chat with welcome message
@@ -116,9 +118,16 @@ const RAGSQLChatbot = () => {
     setSuggestions([]);
   };
 
-  const handleSend = async (message) => {
+  const handleSend = useCallback(async (message) => {
     if (message.trim() === '') return;
 
+    // Check if this is a "show more" request
+    const isShowMore = message.toLowerCase().trim() === 'show more';
+    if (isShowMore && !lastQuery) {
+      return; // No previous query to show more results from
+    }
+
+    setIsTyping(true);
     const newMessage = {
       text: message,
       isUser: true,
@@ -126,24 +135,25 @@ const RAGSQLChatbot = () => {
     };
 
     setChatHistory(prevMessages => [...prevMessages, newMessage]);
-      setInput('');
+    setInput('');
 
     try {
       const response = await fetch(`${API_BASE_URL}/query`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Origin': window.location.origin,
-              'Access-Control-Allow-Origin': '*',
-              'Access-Control-Allow-Methods': 'POST, OPTIONS',
-              'Access-Control-Allow-Headers': 'Content-Type'
-            },
-            mode: 'cors',
-            body: JSON.stringify({
-          message: message,
-              language: LANGUAGES[language].code,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': window.location.origin,
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        },
+        mode: 'cors',
+        body: JSON.stringify({
+          message: isShowMore ? lastQuery : message,
+          language: LANGUAGES[language].code,
           session_id: `req-${Date.now()}`,
+          page: isShowMore ? currentPage + 1 : 1,
           llm_config: useLLM ? {
             ...LLM_CONFIG,
             context: chatHistory.slice(-5).map(msg => ({
@@ -155,59 +165,42 @@ const RAGSQLChatbot = () => {
         }),
       });
 
-        const data = await response.json();
-        
-      // Format the LLM response
+      const data = await response.json();
+      
+      // Format the response based on the data structure
       let formattedResponse = '';
-        if (data.llm_processing) {
-        formattedResponse = `
-          <div class="llm-processed">
-            ${data.llm_processing.enhanced_query ? 
-              `<div><strong>Enhanced Query:</strong> ${data.llm_processing.enhanced_query}</div>` : ''
-            }
-            ${data.llm_processing.project_details ? `
-            <div><strong>Project Details:</strong></div>
-            ${data.llm_processing.project_details.map(detail => 
-              `<div class="bullet-point">${detail}</div>`
-            ).join('')}
-            ` : ''}
-            ${data.llm_processing.statistics ? `
-              <div><strong>Statistics:</strong></div>
-               ${data.llm_processing.statistics.map(stat => 
-                 `<div class="bullet-point">${stat}</div>`
-              ).join('')}
-            ` : ''}
-            ${data.llm_processing.follow_up_questions ? `
-              <div><strong>Suggested Questions:</strong></div>
-               ${data.llm_processing.follow_up_questions.map(q => 
-                 `<div class="bullet-point">${q}</div>`
-              ).join('')}
-            ` : ''}
-            ${data.llm_processing.translation_info ? 
-              `<span class="translation-indicator">${data.llm_processing.translation_info}</span>` : ''
-            }
-          </div>
-        `;
+      
+      if (data.answer) {
+        formattedResponse = formatResponse(data.answer);
+      } else if (data.response) {
+        formattedResponse = formatResponse(data.response);
+      }
 
-        // Update suggestions if available
-        if (data.llm_processing.follow_up_questions) {
-          setSuggestions(data.llm_processing.follow_up_questions);
-        }
+      // Update suggestions if available
+      if (data.suggested_questions) {
+        setSuggestions(data.suggested_questions);
       }
 
       const botMessage = {
-        text: formattedResponse || formatResponse(data.response),
+        text: formattedResponse,
         isUser: false,
         timestamp: new Date().toISOString(),
-        isFormatted: !!formattedResponse,
+        isFormatted: true,
         translated: LANGUAGES[language].requires_translation && data.translated,
         original_language: data.original_language,
-        llm_processed: data.llm_processing ? true : false,
-        suggested_questions: data.llm_processing?.follow_up_questions
+        suggested_questions: data.suggested_questions
       };
 
       setChatHistory(prevMessages => [...prevMessages, botMessage]);
-      } catch (error) {
+      
+      // Update pagination state
+      if (!isShowMore) {
+        setLastQuery(message);
+        setCurrentPage(1);
+      } else {
+        setCurrentPage(prev => prev + 1);
+      }
+    } catch (error) {
       console.error('Error:', error);
       const errorMessage = {
         text: LANGUAGES[language].error_general + ' ' + error.message,
@@ -215,8 +208,10 @@ const RAGSQLChatbot = () => {
         timestamp: new Date().toISOString()
       };
       setChatHistory(prevMessages => [...prevMessages, errorMessage]);
+    } finally {
+      setIsTyping(false);
     }
-  };
+  }, [language, useLLM, chatHistory, currentPage, lastQuery]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -228,37 +223,83 @@ const RAGSQLChatbot = () => {
   const formatResponse = (text) => {
     if (!text) return '';
 
-    // Format project statistics
-    text = text.replace(
-      /(\d+)\s+projects?/gi,
-      '<strong>$1</strong> projects'
-    );
+    // Handle multiple projects summary
+    if (text.includes('Found') && text.includes('projects in all sectors')) {
+      const projectCount = text.match(/Found (\d+) projects/);
+      const budgetMatch = text.match(/Total Budget: MK ([\d,]+\.\d{2})/);
+      const statusMatch = text.match(/Project Status Breakdown:[^]*?(?=Type 'show more')/s);
+      
+      return `
+        <div class="projects-summary">
+          <div class="summary-header">
+            <strong>${projectCount ? projectCount[1] : 'Multiple'} Projects Found</strong>
+            ${budgetMatch ? `<br/>Total Budget: <strong>MK ${budgetMatch[1]}</strong>` : ''}
+          </div>
+          ${statusMatch ? `
+            <div class="status-breakdown">
+              ${statusMatch[0].split('\n')
+                .filter(line => line.trim())
+                .map(line => `<div class="status-item">${line.trim()}</div>`)
+                .join('')}
+            </div>
+          ` : ''}
+          <div class="show-more-prompt">
+            Type 'show more' to see additional projects
+          </div>
+        </div>
+      `;
+    }
 
-    // Format percentages
-    text = text.replace(
-      /(\d+(?:\.\d+)?%)/g,
-      '<strong>$1</strong>'
-    );
+    // Handle individual project details
+    const projectSections = text.split('\n\n\n').filter(section => section.trim());
+    if (projectSections.length > 0 && projectSections[0].includes('•')) {
+      return `
+        <div class="project-list">
+          ${projectSections.map(project => {
+            const lines = project.split('\n');
+            const title = lines[0].trim();
+            const details = lines.slice(1).join('\n');
+            
+            return `
+              <div class="project-item">
+                <div class="project-title">
+                  <a href="#" class="project-link" onclick="window.dispatchEvent(new CustomEvent('projectClick', { detail: '${title}' }))">
+                    ${title}
+                  </a>
+                </div>
+                <div class="project-details">
+                  ${details.split('\n')
+                    .filter(line => line.trim())
+                    .map(line => `<div class="detail-line">${line.trim()}</div>`)
+                    .join('')}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
 
-    // Format monetary values
-    text = text.replace(
-      /(MK\s*\d+(?:,\d{3})*(?:\.\d{2})?)/g,
-      '<strong>$1</strong>'
-    );
+    // Format individual lines with bullet points and statistics
+    const lines = text.split('\n');
+    const formattedLines = lines.map(line => {
+      line = line.trim();
+      if (!line) return '';
+      
+      // Format statistics
+      line = line.replace(/(\d+(?:\.\d+)?%)/g, '<strong>$1</strong>');
+      line = line.replace(/(MK\s*[\d,]+(?:\.\d{2})?)/g, '<strong>$1</strong>');
+      
+      // Format headers
+      line = line.replace(/^([\w\s]+):/, '<strong>$1:</strong>');
+      
+      // Format bullet points
+      line = line.replace(/^•\s*/, '→ ');
+      
+      return `<div class="response-line">${line}</div>`;
+    });
 
-    // Format section headers
-    text = text.replace(
-      /(Summary:|Project Status:|Location:|Sector:|Budget:|Completion:)/g,
-      '<br/><strong>$1</strong>'
-    );
-
-    // Convert bullet points
-    text = text.replace(/•/g, '◆');
-    
-    // Add line breaks for readability
-    text = text.replace(/\./g, '.<br/>');
-    
-    return text;
+    return formattedLines.filter(line => line).join('');
   };
 
   // Update the message rendering
@@ -278,6 +319,18 @@ const RAGSQLChatbot = () => {
       )}
     </div>
   );
+
+  useEffect(() => {
+    const handleProjectClick = (event) => {
+      const projectTitle = event.detail;
+      handleSend(`Tell me about the project: ${projectTitle}`);
+    };
+
+    window.addEventListener('projectClick', handleProjectClick);
+    return () => {
+      window.removeEventListener('projectClick', handleProjectClick);
+    };
+  }, [handleSend]);
 
   return (
     <Layout className="chat-container">
@@ -303,13 +356,6 @@ const RAGSQLChatbot = () => {
           </div>
         </div>
 
-        {llmStatus.processing && (
-          <div className="llm-status" style={{ marginBottom: '10px', textAlign: 'center' }}>
-            <Spin size="small" />
-            <Text type="secondary" style={{ marginLeft: '8px' }}>{llmStatus.task}</Text>
-          </div>
-        )}
-
         <div
           ref={chatContainerRef}
           className="chat-messages"
@@ -334,18 +380,18 @@ const RAGSQLChatbot = () => {
                     />
                   ) : (
                     <div className={`message-text ${msg.translated ? 'translated' : ''} ${msg.llm_processed ? 'llm-processed' : ''}`}>
-                          {msg.text.split('•').map((section, index) => {
-                            if (index === 0) return <div key={index}>{section}</div>;
-                            return (
-                              <div key={index} className="bullet-point">
-                                • {section}
-                              </div>
-                            );
-                          })}
-                  {msg.translated && (
-                    <Text type="secondary" className="translation-indicator">
-                      (Translated from {msg.original_language || 'English'})
-                    </Text>
+                      {msg.text.split('•').map((section, index) => {
+                        if (index === 0) return <div key={index}>{section}</div>;
+                        return (
+                          <div key={index} className="bullet-point">
+                            • {section}
+                          </div>
+                        );
+                      })}
+                      {msg.translated && (
+                        <Text type="secondary" className="translation-indicator">
+                          (Translated from {msg.original_language || 'English'})
+                        </Text>
                       )}
                     </div>
                   )}
@@ -427,4 +473,4 @@ const RAGSQLChatbot = () => {
   );
 };
 
-export default RAGSQLChatbot; 
+export default RAGSQLChatbot;

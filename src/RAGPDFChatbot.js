@@ -499,8 +499,49 @@ const RAGPDFChatbot = () => {
                 size="small"
                 style={{ margin: '0 8px 8px 0' }}
                 onClick={() => {
-                  setChatInput(question);
-                  handleSendMessage();
+                  const userMessage = { sender: 'user', text: question };
+                  setChatHistory(prev => [...prev, userMessage]);
+                  setIsLoading(true);
+
+                  axios.post(`${API_BASE_URL}/query`, {
+                    message: question,
+                    language: language,
+                    session_id: `req-${Date.now()}`
+                  }, {
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Accept': 'application/json'
+                    },
+                    timeout: 60000
+                  })
+                  .then(response => {
+                    const botMessage = { 
+                      sender: 'bot', 
+                      text: response.data.response || 'No response received from the server.',
+                      sources: response.data.sources || [] 
+                    };
+                    setChatHistory(prev => [...prev, botMessage]);
+
+                    if (response.data.suggested_questions && response.data.suggested_questions.length > 0) {
+                      setSuggestions(response.data.suggested_questions);
+                    } else {
+                      setSuggestions(getStaticSuggestions(language));
+                    }
+                  })
+                  .catch(error => {
+                    const errorMessage = error.code === 'ECONNABORTED'
+                      ? `Request timed out after 60 seconds. Please try again. Network status: ${navigator.onLine ? 'Online' : 'Offline'}`
+                      : error.response?.data?.detail || error.message || 'An error occurred while processing your request.';
+                    
+                    message.error(errorMessage);
+                    setChatHistory(prev => [...prev, { 
+                      sender: 'system', 
+                      text: `Error: ${errorMessage}` 
+                    }]);
+                  })
+                  .finally(() => {
+                    setIsLoading(false);
+                  });
                 }}
               >
                 {question}
