@@ -1,8 +1,9 @@
-import React from 'react';
-import { List, Typography } from 'antd';
+import React, { useState } from 'react';
+import { List, Typography, Collapse } from 'antd';
 import DOMPurify from 'dompurify';
 
 const { Text } = Typography;
+const { Panel } = Collapse;
 
 const SourceRenderer = ({ sources }) => {
   if (!sources || sources.length === 0) return null;
@@ -41,24 +42,27 @@ const SourceRenderer = ({ sources }) => {
 
   return (
     <div className="sources-section">
-      <Text strong>Sources:</Text>
-      <List
-        size="small"
-        dataSource={sources}
-        renderItem={source => (
-          <List.Item 
-            className="source-item"
-            onClick={(e) => handleSourceClick(e, source)}
-          >
-            <div 
-              className={source.is_clickable ? 'clickable-source' : ''}
-              dangerouslySetInnerHTML={{ 
-                __html: DOMPurify.sanitize(source.citation, purifyConfig)
-              }}
-            />
-          </List.Item>
-        )}
-      />
+      <Collapse defaultActiveKey={[]}>
+        <Panel header={<Text strong>Sources ({sources.length})</Text>} key="1">
+          <List
+            size="small"
+            dataSource={sources}
+            renderItem={source => (
+              <List.Item 
+                className="source-item"
+                onClick={(e) => handleSourceClick(e, source)}
+              >
+                <div 
+                  className={source.is_clickable ? 'clickable-source' : ''}
+                  dangerouslySetInnerHTML={{ 
+                    __html: DOMPurify.sanitize(source.citation, purifyConfig)
+                  }}
+                />
+              </List.Item>
+            )}
+          />
+        </Panel>
+      </Collapse>
     </div>
   );
 };

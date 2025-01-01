@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, Button, Radio, Input, Layout, List, message, Divider, Typography } from 'antd';
-import { UploadOutlined, SendOutlined } from '@ant-design/icons';
+import { UploadOutlined, SendOutlined, ShareAltOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import { API_CONFIG } from './config/config';
 import DOMPurify from 'dompurify';
 import SourceRenderer from './components/SourceRenderer';
+import ShareModal from './components/share-modal';
 
 const { Content, Sider } = Layout;
 const { TextArea } = Input;
@@ -23,18 +24,16 @@ const RAGPDFChatbot = () => {
   const [embeddedDocuments, setEmbeddedDocuments] = useState([]);
   const [showWelcome, setShowWelcome] = useState(true);
   const [suggestions, setSuggestions] = useState([]);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     fetchEmbeddedDocuments();
   }, []);
 
   useEffect(() => {
-    // Add event listener for document viewing
     const handleViewDocument = (event) => {
       const { fileName, pageNumber } = event.detail;
       message.info(`Opening ${fileName} at page ${pageNumber}`);
-      // Here you can implement the actual document viewing logic
-      // For example, open a modal with a PDF viewer
     };
 
     window.addEventListener('viewDocument', handleViewDocument);
@@ -43,7 +42,6 @@ const RAGPDFChatbot = () => {
     };
   }, []);
 
-  // Welcome messages for each language
   const getWelcomeMessages = (lang) => {
     const messages = {
       en: [
@@ -62,7 +60,6 @@ const RAGPDFChatbot = () => {
     return messages[lang] || messages.en;
   };
 
-  // Static suggested questions based on available documents and language
   const getStaticSuggestions = (lang) => {
     const suggestions = {
       en: [
@@ -73,7 +70,7 @@ const RAGPDFChatbot = () => {
         "What are the recommendations for improving employment formality?"
       ],
       ru: [
-        "Каковы основные программы социальной ��ащиты в Узбекистане?",
+        "Каковы основные программы социальной защиты в Узбекистане?",
         "Расскажите об услугах для людей с инвалидностью в Узбекистане",
         "Каковы основные выводы анализа влияния COVID-19?",
         "Обобщите результаты реформы энергетических субсидий",
@@ -90,23 +87,19 @@ const RAGPDFChatbot = () => {
     return suggestions[lang] || suggestions.en;
   };
 
-  // Handle language change
   const handleLanguageChange = (e) => {
     const newLanguage = e.target.value;
     setLanguage(newLanguage);
     
-    // Clear chat and show welcome messages in selected language
     const messages = getWelcomeMessages(newLanguage);
     setChatHistory([
       { sender: 'bot', text: messages[0] },
       { sender: 'bot', text: messages[1] }
     ]);
 
-    // Reset suggestions to static ones in the new language
     setSuggestions(getStaticSuggestions(newLanguage));
   };
 
-  // Initial welcome messages and suggestions
   useEffect(() => {
     const messages = getWelcomeMessages(language);
     setChatHistory([
@@ -114,7 +107,7 @@ const RAGPDFChatbot = () => {
       { sender: 'bot', text: messages[1] }
     ]);
     setSuggestions(getStaticSuggestions(language));
-  }, []); // Only run on component mount
+  }, []);
 
   const fetchEmbeddedDocuments = async () => {
     try {
@@ -124,7 +117,6 @@ const RAGPDFChatbot = () => {
       }
     } catch (error) {
       console.error('Error fetching embedded documents:', error);
-      // Don't show error message to user, just set empty documents
       setEmbeddedDocuments([]);
     }
   };
@@ -142,7 +134,7 @@ const RAGPDFChatbot = () => {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
-        timeout: 60000 // 60 second timeout
+        timeout: 60000
       });
 
       message.success(`${file.name} uploaded successfully`);
@@ -166,182 +158,102 @@ const RAGPDFChatbot = () => {
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
 
-    const requestId = `req-${Date.now()}`;
-    const startTime = performance.now();
-    
-    // Log API configuration
-    console.log(`[${requestId}] API Configuration:`, {
-      baseUrl: API_BASE_URL,
-      environment: process.env.NODE_ENV,
-      apiUrl: API_CONFIG.PDF_API_URL
-    });
-
-    console.log(`[${requestId}] Network Information:`, {
-      onLine: navigator.onLine,
-      connection: navigator.connection ? {
-        effectiveType: navigator.connection.effectiveType,
-        rtt: navigator.connection.rtt,
-        downlink: navigator.connection.downlink
-      } : 'Not available'
-    });
-
     const userMessage = { sender: 'user', text: chatInput };
-    setChatHistory(prev => [...prev, userMessage]);
+    const initialBotMessage = { 
+        sender: 'bot', 
+        text: '', 
+        sources: [],
+        isStreaming: true 
+    };
+
+    setChatHistory(prev => [...prev, userMessage, initialBotMessage]);
     setChatInput('');
     setIsLoading(true);
 
-    let timeoutCounter = 0;
-    const checkConnectionInterval = setInterval(() => {
-      timeoutCounter += 1;
-      console.log(`[${requestId}] Connection check at ${timeoutCounter}s:`, {
-        online: navigator.onLine,
-        timeElapsed: `${timeoutCounter} seconds`
-      });
-    }, 1000);
-
     try {
-      console.log(`[${requestId}] Initiating axios call...`);
-      const fetchStartTime = performance.now();
-
-      // Test server response time with a HEAD request
-      try {
-        const serverCheckStart = performance.now();
-        await fetch(`${API_BASE_URL}/status`, {
-          method: 'HEAD'
+        const response = await fetch(`${API_BASE_URL}/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                query: chatInput,
+                source_lang: language
+            })
         });
-        const serverCheckEnd = performance.now();
-        console.log(`[${requestId}] Server response time: ${(serverCheckEnd - serverCheckStart).toFixed(2)}ms`);
-      } catch (error) {
-        console.error(`[${requestId}] Server check failed:`, error);
-      }
 
-      const response = await axios.post(`${API_BASE_URL}/query`, {
-        message: chatInput,
-        language: language,
-        session_id: requestId
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        timeout: 60000,
-        onUploadProgress: (progressEvent) => {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          console.log(`[${requestId}] Upload progress: ${progress}%`, {
-            loaded: progressEvent.loaded,
-            total: progressEvent.total,
-            timeElapsed: (performance.now() - startTime).toFixed(2)
-          });
-        },
-        onDownloadProgress: (progressEvent) => {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          console.log(`[${requestId}] Download progress: ${progress}%`, {
-            loaded: progressEvent.loaded,
-            total: progressEvent.total,
-            timeElapsed: (performance.now() - startTime).toFixed(2)
-          });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-      });
 
-      clearInterval(checkConnectionInterval);
-      const fetchEndTime = performance.now();
-      console.log(`[${requestId}] Axios call completed in ${(fetchEndTime - fetchStartTime).toFixed(2)}ms`);
-      console.log(`[${requestId}] Response status:`, response.status);
-      console.log(`[${requestId}] Response headers:`, response.headers);
-      console.log(`[${requestId}] Response data:`, response.data);
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
 
-      if (response.data.processing_time) {
-        console.log(`[${requestId}] Backend processing time:`, {
-          total: response.data.processing_time,
-          operations: response.data.operation_times
-        });
-      }
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
 
-      const botMessage = { 
-        sender: 'bot', 
-        text: response.data.response || 'No response received from the server.',
-        sources: response.data.sources || [] 
-      };
-      setChatHistory(prev => [...prev, botMessage]);
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n').filter(line => line.trim());
 
-      // Update suggestions if provided by backend, otherwise use static ones in current language
-      if (response.data.suggested_questions && response.data.suggested_questions.length > 0) {
-        setSuggestions(response.data.suggested_questions);
-      } else {
-        setSuggestions(getStaticSuggestions(language));
-      }
-
-      const endTime = performance.now();
-      console.log(`[${requestId}] Total request time: ${(endTime - startTime).toFixed(2)}ms`);
-
+            for (const line of lines) {
+                try {
+                    const data = JSON.parse(line);
+                    setChatHistory(prev => {
+                        const newHistory = [...prev];
+                        const lastMessage = newHistory[newHistory.length - 1];
+                        
+                        if (lastMessage && lastMessage.sender === 'bot') {
+                            lastMessage.text = data.content || data.answer || '';
+                            lastMessage.sources = data.sources || [];
+                            lastMessage.isStreaming = false;
+                        }
+                        
+                        return newHistory;
+                    });
+                } catch (e) {
+                    console.error('Error parsing stream:', e);
+                }
+            }
+        }
     } catch (error) {
-      clearInterval(checkConnectionInterval);
-      const endTime = performance.now();
-
-      // Enhanced error logging
-      const errorDetails = {
-        name: error.name,
-        message: error.message,
-        code: error.code,
-        stack: error.stack,
-        response: error.response?.data,
-        timings: {
-          totalTime: (endTime - startTime).toFixed(2),
-          atTime: new Date().toISOString()
-        },
-        network: {
-          online: navigator.onLine,
-          connection: navigator.connection ? {
-            effectiveType: navigator.connection.effectiveType,
-            rtt: navigator.connection.rtt,
-            downlink: navigator.connection.downlink
-          } : 'Not available'
-        },
-        request: {
-          url: error.config?.url,
-          method: error.config?.method,
-          headers: error.config?.headers,
-          timeout: error.config?.timeout
-        }
-      };
-
-      console.error(`[${requestId}] Request failed:`, errorDetails);
-
-      const errorMessage = error.code === 'ECONNABORTED'
-        ? `Request timed out after 60 seconds. Please try again. Network status: ${navigator.onLine ? 'Online' : 'Offline'}`
-        : error.response?.data?.detail || error.message || 'An error occurred while processing your request.';
-      
-      message.error(errorMessage);
-      setChatHistory(prev => [...prev, { 
-        sender: 'system', 
-        text: `Error: ${errorMessage}` 
-      }]);
+        console.error('Error:', error);
+        setChatHistory(prev => {
+            const newHistory = [...prev];
+            const lastMessage = newHistory[newHistory.length - 1];
+            
+            if (lastMessage && lastMessage.sender === 'bot') {
+                lastMessage.text = `Error: ${error.message}`;
+                lastMessage.isStreaming = false;
+            }
+            
+            return newHistory;
+        });
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
 
+  const renderMessage = (msg, index) => {
+    return (
+        <List.Item key={index} className={`message ${msg.sender}`}>
+            <div className="message-content">
+                <div className="message-text">
+                    {msg.text}
+                    {msg.isStreaming && <span className="streaming-indicator">...</span>}
+                </div>
+                {msg.sources && msg.sources.length > 0 && (
+                    <div className="message-sources">
+                        <Divider orientation="left">Sources</Divider>
+                        <SourceRenderer sources={msg.sources} />
+                    </div>
+                )}
+            </div>
+        </List.Item>
+    );
+  };
+
   const visibleFiles = showMore ? uploadedFiles : uploadedFiles.slice(0, 3);
-
-  const renderChatMessage = (message) => (
-    <List.Item
-      className={`chat-message ${message.sender}`}
-    >
-      <div>
-        <div>{message.text}</div>
-        {message.sources && <SourceRenderer sources={message.sources} />}
-      </div>
-    </List.Item>
-  );
-
-  const renderChatHistory = () => (
-    <List
-      className="chat-history"
-      itemLayout="horizontal"
-      dataSource={chatHistory}
-      renderItem={message => renderChatMessage(message)}
-    />
-  );
 
   return (
     <Layout style={{ minHeight: '100%', background: '#fff' }}>
@@ -398,16 +310,7 @@ const RAGPDFChatbot = () => {
           <h3>Available Documents</h3>
           <List
             size="small"
-            dataSource={[
-              { title: "WorldBank ECA Economic Update 2022", url: "#" },
-              { title: "WorldBank Energy Subsidy Reform Uzbekistan 2023", url: "#" },
-              { title: "UNICEF Road to Recovery Uzbekistan COVID 2021", url: "#" },
-              { title: "ESCAP Unpaid Care Work Uzbekistan 2023", url: "#" },
-              { title: "Uzbekistan Public Expenditure Review 2022", url: "#" },
-              { title: "UNDP Decent Employment Formality Central Asia 2024", url: "#" },
-              { title: "Analysis State System Uzbekistan Disability Services 2024", url: "#" },
-              { title: "IPCIG Universal Health Insurance Uzbekistan 2023", url: "#" }
-            ]}
+            dataSource={embeddedDocuments}
             renderItem={doc => (
               <List.Item>
                 <div style={{ width: '100%', fontSize: '14px' }}>
@@ -430,61 +333,26 @@ const RAGPDFChatbot = () => {
         </div>
       </Sider>
 
-      {/* Chat Content Section */}
       <Content className="chat-content">
         <h1 className="chat-title">RAG PDF Chatbot</h1>
-        <p className="language-label">Select Language / Выберите язык / Tilni tanlang</p>
-
-        {/* Radio buttons for language selection */}
-        <Radio.Group onChange={handleLanguageChange} value={language}>
-          <Radio value="en">English</Radio>
-          <Radio value="ru">Русский</Radio>
-          <Radio value="uz">O'zbek</Radio>
-        </Radio.Group>
-
-        {/* Chat History */}
-        <div className="chat-history">
-          {chatHistory.map((message, index) => (
-            <div key={index}>
-              <div className={`chat-message ${message.sender} ${message.isDocumentList ? 'document-list' : ''}`}>
-                {message.isDocumentList ? (
-                  <div className="document-list-content">
-                    {message.text.split('\n').map((line, i) => (
-                      <div key={i} className="document-item">{line}</div>
-                    ))}
-                  </div>
-                ) : (
-                  message.text
-                )}
-              </div>
-              {message.sources && message.sources.length > 0 && (
-                <div className="message-sources">
-                  <h4>Sources:</h4>
-                  {message.sources.map((source, sourceIndex) => (
-                    <div key={sourceIndex} className="source-item">
-                      {source.title && <div className="source-title">{source.title}</div>}
-                      {source.citation && <div className="source-citation">{source.citation}</div>}
-                      {source.content && (
-                        <div className="source-content">
-                          {source.content.length > 200 
-                            ? `${source.content.substring(0, 200)}...` 
-                            : source.content}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-          {isLoading && (
-            <div className="chat-message bot loading">
-              Typing...
-            </div>
-          )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <Radio.Group value={language} onChange={handleLanguageChange}>
+            <Radio.Button value="en">English</Radio.Button>
+            <Radio.Button value="ru">Русский</Radio.Button>
+            <Radio.Button value="uz">O'zbek</Radio.Button>
+          </Radio.Group>
+          <Button 
+            icon={<ShareAltOutlined />} 
+            onClick={() => setShowShareModal(true)}
+          >
+            Share Chat
+          </Button>
         </div>
 
-        {/* Suggested Questions */}
+        <div className="chat-history">
+          {chatHistory.map((message, index) => renderMessage(message, index))}
+        </div>
+
         <div style={{ marginTop: '20px', marginBottom: '20px' }}>
           <Text strong>
             {language === 'en' ? 'Suggested questions:' : 
@@ -492,56 +360,15 @@ const RAGPDFChatbot = () => {
              'Tavsiya etilgan savollar:'}
           </Text>
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
-            {(suggestions.length > 0 ? suggestions : getStaticSuggestions(language)).map((question, index) => (
+            {suggestions.map((question, index) => (
               <Button
                 key={index}
                 type="default"
                 size="small"
                 style={{ margin: '0 8px 8px 0' }}
                 onClick={() => {
-                  const userMessage = { sender: 'user', text: question };
-                  setChatHistory(prev => [...prev, userMessage]);
-                  setIsLoading(true);
-
-                  axios.post(`${API_BASE_URL}/query`, {
-                    message: question,
-                    language: language,
-                    session_id: `req-${Date.now()}`
-                  }, {
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Accept': 'application/json'
-                    },
-                    timeout: 60000
-                  })
-                  .then(response => {
-                    const botMessage = { 
-                      sender: 'bot', 
-                      text: response.data.response || 'No response received from the server.',
-                      sources: response.data.sources || [] 
-                    };
-                    setChatHistory(prev => [...prev, botMessage]);
-
-                    if (response.data.suggested_questions && response.data.suggested_questions.length > 0) {
-                      setSuggestions(response.data.suggested_questions);
-                    } else {
-                      setSuggestions(getStaticSuggestions(language));
-                    }
-                  })
-                  .catch(error => {
-                    const errorMessage = error.code === 'ECONNABORTED'
-                      ? `Request timed out after 60 seconds. Please try again. Network status: ${navigator.onLine ? 'Online' : 'Offline'}`
-                      : error.response?.data?.detail || error.message || 'An error occurred while processing your request.';
-                    
-                    message.error(errorMessage);
-                    setChatHistory(prev => [...prev, { 
-                      sender: 'system', 
-                      text: `Error: ${errorMessage}` 
-                    }]);
-                  })
-                  .finally(() => {
-                    setIsLoading(false);
-                  });
+                  setChatInput(question);
+                  handleSendMessage();
                 }}
               >
                 {question}
@@ -579,6 +406,7 @@ const RAGPDFChatbot = () => {
             Send
           </Button>
         </div>
+        {showShareModal && <ShareModal onClose={() => setShowShareModal(false)} />}
       </Content>
     </Layout>
   );

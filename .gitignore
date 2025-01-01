@@ -42,3 +42,5 @@ src/nasp-chatbot.code-workspace
 .env.server
 *Letlhogonolo-Fanampe-1732199462895-Psychometric.pdf
 /__pycache__
+
+.codegpt

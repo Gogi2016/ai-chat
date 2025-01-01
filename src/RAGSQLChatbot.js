@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Layout, Input, Button, List, Spin, message, Radio, Typography, Switch } from 'antd';
+import { Layout, Input, Button, List, Spin, Radio, Typography, Switch } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
 import { API_CONFIG } from './config/config';
 import './App.css';
@@ -32,7 +32,7 @@ const LANGUAGES = {
     placeholder: "Спросите об инфраструктурных проектах...",
     suggested: "Предлагаемые вопросы:",
     typing: "Печатает...",
-    error_timeout: "Запрос не отвечен за 60 секунд. Пожалуйста, попробуйте снова.",
+    error_timeout: "Запрос не о��вечен за 60 секунд. Пожалуйста, попробуйте снова.",
     error_general: "Не удалось получить ответ от чат-бота:",
     no_response: "Ответ не получен",
     requires_translation: false
@@ -63,24 +63,24 @@ const LLM_CONFIG = {
 const suggestedQuestions = {
   english: [
     "Show me all infrastructure projects",
-    "What are the project sectors?",
-    "Show projects by region",
-    "List projects in Northern Region",
-    "What is the status of education projects?"
+    "List projects by location",
+    "Show projects in Northern Region",
+    "Show projects in Central Region",
+    "Show projects in Southern Region"
   ],
   russian: [
-    "Покажите все инфраструктурные проекты",
-    "Какие есть секторы проектов?",
-    "Покажите проекты по регионам",
+    "Покажите все инфраструк��урные проекты",
+    "Покажите проекты по местоположению",
     "Покажите проекты в Северном регионе",
-    "Какой статус образовательных проектов?"
+    "Покажите проекты в Центральном регионе",
+    "Покажите проекты в Южном регионе"
   ],
   uzbek: [
     "Barcha infratuzilma loyihalarini ko'rsating",
-    "Loyiha sektorlari qanday?",
-    "Hududlar bo'yicha loyihalarni ko'rsating",
+    "Joylashuv bo'yicha loyihalarni ko'rsating",
     "Shimoliy mintaqadagi loyihalarni ko'rsating",
-    "Ta'lim loyihalarining holati qanday?"
+    "Markaziy mintaqadagi loyihalarni ko'rsating",
+    "Janubiy mintaqadagi loyihalarni ko'rsating"
   ]
 };
 
@@ -93,6 +93,8 @@ const RAGSQLChatbot = () => {
   const [useLLM, setUseLLM] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastQuery, setLastQuery] = useState('');
+  const [totalResults, setTotalResults] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const chatContainerRef = useRef(null);
 
   // Initialize chat with welcome message
@@ -154,6 +156,7 @@ const RAGSQLChatbot = () => {
           language: LANGUAGES[language].code,
           session_id: `req-${Date.now()}`,
           page: isShowMore ? currentPage + 1 : 1,
+          page_size: 30,
           llm_config: useLLM ? {
             ...LLM_CONFIG,
             context: chatHistory.slice(-5).map(msg => ({
@@ -188,7 +191,13 @@ const RAGSQLChatbot = () => {
         isFormatted: true,
         translated: LANGUAGES[language].requires_translation && data.translated,
         original_language: data.original_language,
-        suggested_questions: data.suggested_questions
+        suggested_questions: data.suggested_questions,
+        metadata: {
+          total_results: data.metadata.total_results,
+          current_page: data.metadata.current_page,
+          total_pages: data.metadata.total_pages,
+          has_more: data.metadata.has_more
+        }
       };
 
       setChatHistory(prevMessages => [...prevMessages, botMessage]);
@@ -200,6 +209,8 @@ const RAGSQLChatbot = () => {
       } else {
         setCurrentPage(prev => prev + 1);
       }
+      setTotalResults(data.metadata.total_results);
+      setHasMore(data.metadata.has_more);
     } catch (error) {
       console.error('Error:', error);
       const errorMessage = {
@@ -226,18 +237,16 @@ const RAGSQLChatbot = () => {
     // Handle multiple projects summary
     if (text.includes('Found') && text.includes('projects in all sectors')) {
       const projectCount = text.match(/Found (\d+) projects/);
-      const budgetMatch = text.match(/Total Budget: MK ([\d,]+\.\d{2})/);
-      const statusMatch = text.match(/Project Status Breakdown:[^]*?(?=Type 'show more')/s);
+      const locationMatch = text.match(/Location:[^]*?(?=Project:|$)/s);
       
       return `
         <div class="projects-summary">
           <div class="summary-header">
             <strong>${projectCount ? projectCount[1] : 'Multiple'} Projects Found</strong>
-            ${budgetMatch ? `<br/>Total Budget: <strong>MK ${budgetMatch[1]}</strong>` : ''}
           </div>
-          ${statusMatch ? `
+          ${locationMatch ? `
             <div class="status-breakdown">
-              ${statusMatch[0].split('\n')
+              ${locationMatch[0].split('\n')
                 .filter(line => line.trim())
                 .map(line => `<div class="status-item">${line.trim()}</div>`)
                 .join('')}
@@ -258,7 +267,12 @@ const RAGSQLChatbot = () => {
           ${projectSections.map(project => {
             const lines = project.split('\n');
             const title = lines[0].trim();
-            const details = lines.slice(1).join('\n');
+            const details = lines.slice(1)
+              .filter(line => {
+                const lowerLine = line.toLowerCase().trim();
+                return lowerLine.startsWith('project:') || lowerLine.startsWith('location:');
+              })
+              .join('\n');
             
             return `
               <div class="project-item">
@@ -286,9 +300,11 @@ const RAGSQLChatbot = () => {
       line = line.trim();
       if (!line) return '';
       
-      // Format statistics
-      line = line.replace(/(\d+(?:\.\d+)?%)/g, '<strong>$1</strong>');
-      line = line.replace(/(MK\s*[\d,]+(?:\.\d{2})?)/g, '<strong>$1</strong>');
+      // Only include Project and Location lines
+      const lowerLine = line.toLowerCase();
+      if (!lowerLine.startsWith('project:') && !lowerLine.startsWith('location:')) {
+        return '';
+      }
       
       // Format headers
       line = line.replace(/^([\w\s]+):/, '<strong>$1:</strong>');
@@ -302,24 +318,6 @@ const RAGSQLChatbot = () => {
     return formattedLines.filter(line => line).join('');
   };
 
-  // Update the message rendering
-  const renderMessage = (message) => (
-    <div key={message.timestamp} className={`message ${message.isUser ? 'user' : 'bot'}`}>
-      <div className="message-header">
-        <span className="message-sender">{message.isUser ? 'You' : 'Bot'}</span>
-        <span className="message-time">{new Date(message.timestamp).toLocaleTimeString()}</span>
-      </div>
-      {message.isFormatted ? (
-        <div 
-          className="message-text llm-processed"
-          dangerouslySetInnerHTML={{ __html: message.text }}
-        />
-      ) : (
-        <div className="message-text">{message.text}</div>
-      )}
-    </div>
-  );
-
   useEffect(() => {
     const handleProjectClick = (event) => {
       const projectTitle = event.detail;
@@ -331,6 +329,64 @@ const RAGSQLChatbot = () => {
       window.removeEventListener('projectClick', handleProjectClick);
     };
   }, [handleSend]);
+
+  const renderMessage = (message) => {
+    if (message.isUser) {
+      return (
+        <List.Item key={message.timestamp} className={`message ${message.isUser ? 'user' : 'bot'}`}>
+          <List.Item.Meta
+            title={
+              <div className="message-header">
+                <span className="message-sender">{message.isUser ? 'You' : 'Bot'}</span>
+                <span className="message-time">{new Date(message.timestamp).toLocaleTimeString()}</span>
+              </div>
+            }
+            description={
+              message.isFormatted ? (
+                <div 
+                  className="message-text llm-processed"
+                  dangerouslySetInnerHTML={{ __html: message.text }}
+                />
+              ) : (
+                <div className="message-text">{message.text}</div>
+              )
+            }
+          />
+        </List.Item>
+      );
+    } else {
+      return (
+        <List.Item key={message.timestamp} className={`message ${message.isUser ? 'user' : 'bot'}`}>
+          <List.Item.Meta
+            title={
+              <div className="message-header">
+                <span className="message-sender">{message.isUser ? 'You' : 'Bot'}</span>
+                <span className="message-time">{new Date(message.timestamp).toLocaleTimeString()}</span>
+              </div>
+            }
+            description={
+              message.isFormatted ? (
+                <div 
+                  className="message-text llm-processed"
+                  dangerouslySetInnerHTML={{ __html: message.text }}
+                />
+              ) : (
+                <div className="message-text">{message.text}</div>
+              )
+            }
+          />
+          {message.metadata?.has_more && (
+            <div className="message-footer">
+              <Text type="secondary">
+                Showing {message.metadata.current_page * 30} of {message.metadata.total_results} projects. 
+                Type "show more" to see additional results.
+              </Text>
+            </div>
+          )}
+        </List.Item>
+      );
+    }
+  };
 
   return (
     <Layout className="chat-container">
@@ -370,50 +426,7 @@ const RAGSQLChatbot = () => {
         >
           <List
             dataSource={chatHistory}
-            renderItem={(msg, index) => (
-              <List.Item className={`message ${msg.isUser ? 'user' : 'bot'}`}>
-                <div className="message-content">
-                  {msg.isFormatted ? (
-                    <div 
-                      className="message-text llm-processed"
-                      dangerouslySetInnerHTML={{ __html: msg.text }}
-                    />
-                  ) : (
-                    <div className={`message-text ${msg.translated ? 'translated' : ''} ${msg.llm_processed ? 'llm-processed' : ''}`}>
-                      {msg.text.split('•').map((section, index) => {
-                        if (index === 0) return <div key={index}>{section}</div>;
-                        return (
-                          <div key={index} className="bullet-point">
-                            • {section}
-                          </div>
-                        );
-                      })}
-                      {msg.translated && (
-                        <Text type="secondary" className="translation-indicator">
-                          (Translated from {msg.original_language || 'English'})
-                        </Text>
-                      )}
-                    </div>
-                  )}
-                  {msg.suggested_questions && msg.suggested_questions.length > 0 && (
-                    <div className="suggested-questions">
-                      <Text strong>{LANGUAGES[language].suggested}</Text>
-                      <List
-                        size="small"
-                        dataSource={msg.suggested_questions}
-                        renderItem={(question) => (
-                          <List.Item>
-                            <Button type="link" onClick={() => handleSend(question)}>
-                              {question}
-                            </Button>
-                          </List.Item>
-                        )}
-                      />
-                    </div>
-                  )}
-                </div>
-              </List.Item>
-            )}
+            renderItem={renderMessage}
           />
           {isTyping && (
             <div className="typing-indicator">
