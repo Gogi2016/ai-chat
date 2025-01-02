@@ -8,8 +8,12 @@ import reportWebVitals from './reportWebVitals';
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(function(registrations) {
     for(let registration of registrations) {
-      registration.unregister();
+      registration.unregister().catch(error => {
+        console.log('Service worker unregistration failed:', error);
+      });
     }
+  }).catch(error => {
+    console.log('Service worker registration lookup failed:', error);
   });
 }
 
