@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { List, Typography, Collapse } from 'antd';
-import DOMPurify from 'dompurify';
 
 const { Text } = Typography;
 const { Panel } = Collapse;
@@ -8,56 +7,33 @@ const { Panel } = Collapse;
 const SourceRenderer = ({ sources }) => {
   if (!sources || sources.length === 0) return null;
 
-  const handleSourceClick = (e, source) => {
-    // Prevent default link behavior
-    e.preventDefault();
-    
-    if (!source.is_clickable) return;
+  const renderSourceContent = (source) => {
+    const metadata = source.metadata || {};
+    const title = metadata.title || source.title || 'Document';
+    const pageNumber = metadata.page_number || source.page_number;
+    const content = source.page_content || source.content || '';
 
-    if (source.url) {
-      window.open(source.url, '_blank', 'noopener,noreferrer');
-    } else if (source.file_name) {
-      const event = new CustomEvent('viewDocument', {
-        detail: { 
-          fileName: source.file_name, 
-          pageNumber: source.page_number 
-        }
-      });
-      window.dispatchEvent(event);
-    }
-  };
-
-  // Configure DOMPurify
-  DOMPurify.addHook('afterSanitizeAttributes', function (node) {
-    if ('target' in node) {
-      node.setAttribute('target', '_blank');
-      node.setAttribute('rel', 'noopener noreferrer');
-    }
-  });
-
-  const purifyConfig = {
-    ALLOWED_TAGS: ['a', 'p', 'span', 'div', 'br'],
-    ALLOWED_ATTR: ['href', 'class', 'data-page', 'data-file', 'target', 'rel'],
+    return (
+      <div>
+        <Text strong>{title}</Text>
+        {pageNumber && <Text> - Page {pageNumber}</Text>}
+        <div style={{ marginTop: 8 }}>
+          <Text type="secondary">{content}</Text>
+        </div>
+      </div>
+    );
   };
 
   return (
     <div className="sources-section">
-      <Collapse defaultActiveKey={[]}>
+      <Collapse defaultActiveKey={['1']}>
         <Panel header={<Text strong>Sources ({sources.length})</Text>} key="1">
           <List
             size="small"
             dataSource={sources}
             renderItem={source => (
-              <List.Item 
-                className="source-item"
-                onClick={(e) => handleSourceClick(e, source)}
-              >
-                <div 
-                  className={source.is_clickable ? 'clickable-source' : ''}
-                  dangerouslySetInnerHTML={{ 
-                    __html: DOMPurify.sanitize(source.citation, purifyConfig)
-                  }}
-                />
+              <List.Item>
+                {renderSourceContent(source)}
               </List.Item>
             )}
           />
@@ -67,4 +43,4 @@ const SourceRenderer = ({ sources }) => {
   );
 };
 
-export default SourceRenderer; 
+export default SourceRenderer;

@@ -11,24 +11,12 @@ const ShareModal = ({ onClose }) => {
       }
     };
 
-    // Add event listener and show modal
+    // Add event listener
     document.addEventListener('keydown', handleEscape);
-    
-    // Add show class after a small delay to ensure the modal is mounted
-    setTimeout(() => {
-      const modal = modalRef.current;
-      if (modal) {
-        modal.classList.add('show');
-      }
-    }, 0);
 
     // Cleanup function
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      const modal = modalRef.current;
-      if (modal && modal.classList) {
-        modal.classList.remove('show');
-      }
     };
   }, [onClose]);
 
@@ -37,23 +25,17 @@ const ShareModal = ({ onClose }) => {
   };
 
   const handleClose = () => {
-    const modal = modalRef.current;
-    if (modal && modal.classList) {
-      modal.classList.remove('show');
-    }
     if (onClose) {
       onClose();
     }
   };
 
   return (
-    <div id="share-modal" className="modal" onClick={handleClose} ref={modalRef}>
+    <div className="modal" onClick={handleClose} ref={modalRef}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <h2>Share Chat</h2>
-        <div className="share-options">
-          <button onClick={handleShare}>Share Link</button>
-          <button onClick={handleClose}>Cancel</button>
-        </div>
+        <h2>Share this conversation</h2>
+        <button onClick={handleShare}>Share</button>
+        <button onClick={handleClose}>Close</button>
       </div>
     </div>
   );

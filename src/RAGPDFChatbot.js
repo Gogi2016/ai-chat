@@ -26,6 +26,28 @@ const RAGPDFChatbot = () => {
   const [suggestions, setSuggestions] = useState([]);
   const [showShareModal, setShowShareModal] = useState(false);
 
+  const fetchEmbeddedDocuments = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/documents`);
+      console.log('Documents response:', response.data);
+      setEmbeddedDocuments(response.data.documents || []);
+    } catch (error) {
+      console.error('Error fetching embedded documents:', error);
+      setEmbeddedDocuments([]);
+    }
+  };
+
+  useEffect(() => {
+    console.log('API_BASE_URL:', API_BASE_URL);
+    const messages = getWelcomeMessages(language);
+    setChatHistory([
+      { sender: 'bot', text: messages[0] },
+      { sender: 'bot', text: messages[1] }
+    ]);
+    setSuggestions(getStaticSuggestions(language));
+    fetchEmbeddedDocuments();
+  }, [language]);
+
   useEffect(() => {
     fetchEmbeddedDocuments();
   }, []);
@@ -98,27 +120,6 @@ const RAGPDFChatbot = () => {
     ]);
 
     setSuggestions(getStaticSuggestions(newLanguage));
-  };
-
-  useEffect(() => {
-    const messages = getWelcomeMessages(language);
-    setChatHistory([
-      { sender: 'bot', text: messages[0] },
-      { sender: 'bot', text: messages[1] }
-    ]);
-    setSuggestions(getStaticSuggestions(language));
-  }, []);
-
-  const fetchEmbeddedDocuments = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/documents`);
-      if (response.data.status === 'success') {
-        setEmbeddedDocuments(response.data.documents || []);
-      }
-    } catch (error) {
-      console.error('Error fetching embedded documents:', error);
-      setEmbeddedDocuments([]);
-    }
   };
 
   const customUpload = async (info) => {
@@ -204,7 +205,7 @@ const RAGPDFChatbot = () => {
                         const lastMessage = newHistory[newHistory.length - 1];
                         
                         if (lastMessage && lastMessage.sender === 'bot') {
-                            lastMessage.text = data.response || data.content || data.answer || '';
+                            lastMessage.text = (data.response || data.content || data.answer || '').replace(/^AI Assistant:\s*/i, '');
                             lastMessage.sources = data.sources || [];
                             lastMessage.isStreaming = false;
                         }
