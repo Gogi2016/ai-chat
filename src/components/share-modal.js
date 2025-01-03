@@ -5,43 +5,41 @@ const ShareModal = ({ onClose }) => {
   const modalRef = useRef(null);
 
   useEffect(() => {
-    let mounted = true;
-    
-    // Add a small delay to ensure DOM is ready
-    const timeoutId = setTimeout(() => {
-      if (!mounted) return;
-      
-      const handleEscape = (e) => {
-        if (e.key === 'Escape' && onClose) {
-          onClose();
-        }
-      };
-
-      document.addEventListener('keydown', handleEscape);
-      
-      if (modalRef.current) {
-        modalRef.current.classList.add('show');
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
       }
+    };
 
-      return () => {
-        document.removeEventListener('keydown', handleEscape);
-      };
-    }, 100);
+    // Add event listener and show modal
+    document.addEventListener('keydown', handleEscape);
+    
+    // Add show class after a small delay to ensure the modal is mounted
+    setTimeout(() => {
+      const modal = modalRef.current;
+      if (modal) {
+        modal.classList.add('show');
+      }
+    }, 0);
 
+    // Cleanup function
     return () => {
-      mounted = false;
-      clearTimeout(timeoutId);
+      document.removeEventListener('keydown', handleEscape);
+      const modal = modalRef.current;
+      if (modal && modal.classList) {
+        modal.classList.remove('show');
+      }
     };
   }, [onClose]);
 
   const handleShare = () => {
-    // Implement share functionality here
     console.log('Share button clicked');
   };
 
   const handleClose = () => {
-    if (modalRef.current) {
-      modalRef.current.classList.remove('show');
+    const modal = modalRef.current;
+    if (modal && modal.classList) {
+      modal.classList.remove('show');
     }
     if (onClose) {
       onClose();
@@ -52,8 +50,10 @@ const ShareModal = ({ onClose }) => {
     <div id="share-modal" className="modal" onClick={handleClose} ref={modalRef}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
         <h2>Share Chat</h2>
-        <button onClick={handleShare}>Share</button>
-        <button onClick={handleClose}>Close</button>
+        <div className="share-options">
+          <button onClick={handleShare}>Share Link</button>
+          <button onClick={handleClose}>Cancel</button>
+        </div>
       </div>
     </div>
   );

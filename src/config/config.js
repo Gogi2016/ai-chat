@@ -20,6 +20,16 @@ const getApiUrl = (envVar, defaultPort) => {
 
 // Create API configuration based on current environment
 const createApiConfig = () => {
+  // Check for production environment first
+  if (process.env.REACT_APP_NODE_ENV === 'production') {
+    return {
+      PDF_API_URL: 'https://ai.kwantu.support/api/rag-pdf-chatbot',
+      SQL_API_URL: 'https://ai.kwantu.support/api/rag-sql-chatbot',
+      NLP_API_URL: 'https://ai.kwantu.support/api/nlp-demo'
+    };
+  }
+
+  // For non-production environments
   const hostname = window?.location?.hostname || 'localhost';
   const isServerTesting = hostname === '154.0.164.254';
   const baseUrl = isServerTesting ? 'http://154.0.164.254' : 'http://localhost';

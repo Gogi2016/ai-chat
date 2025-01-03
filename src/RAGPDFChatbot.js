@@ -171,7 +171,7 @@ const RAGPDFChatbot = () => {
     setIsLoading(true);
 
     try {
-        const response = await fetch(`${API_BASE_URL}/chat`, {
+        const response = await fetch(`${API_BASE_URL}/query`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -204,7 +204,7 @@ const RAGPDFChatbot = () => {
                         const lastMessage = newHistory[newHistory.length - 1];
                         
                         if (lastMessage && lastMessage.sender === 'bot') {
-                            lastMessage.text = data.content || data.answer || '';
+                            lastMessage.text = data.response || data.content || data.answer || '';
                             lastMessage.sources = data.sources || [];
                             lastMessage.isStreaming = false;
                         }
