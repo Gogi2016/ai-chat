@@ -315,18 +315,12 @@ const RAGPDFChatbot = () => {
             renderItem={doc => (
               <List.Item>
                 <div style={{ width: '100%', fontSize: '14px' }}>
-                  <a 
-                    href={doc.url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    style={{ color: '#1890ff', textDecoration: 'none' }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      message.info('Document link will be available soon');
-                    }}
-                  >
-                    {doc.title}
-                  </a>
+                  <div style={{ marginBottom: '4px' }}>
+                    <Text strong>{doc.title}</Text>
+                  </div>
+                  <div style={{ color: '#666', fontSize: '12px' }}>
+                    {`Page ${doc.page} of ${doc.total_pages}`}
+                  </div>
                 </div>
               </List.Item>
             )}
