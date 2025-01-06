@@ -389,97 +389,94 @@ const RAGSQLChatbot = () => {
   };
 
   return (
-    <Layout className="chat-container">
-      <Content style={{ padding: '24px', height: '100vh' }}>
-        <div style={{ marginTop: '20px', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <Text>Select Language / Выберите язык / Tilni tanlang</Text>
-            <div>
-              <Text style={{ marginRight: '8px' }}>LLM Processing:</Text>
-              <Switch
-                checked={useLLM}
-                onChange={setUseLLM}
-                size="small"
-              />
-            </div>
-          </div>
-          <div style={{ marginTop: '10px' }}>
+    <Layout style={{ minHeight: '100%', background: '#fff' }}>
+      <Content className="chat-content">
+        <div>
+          <h1 className="chat-title">RAG SQL Chatbot</h1>
+          <p className="chat-description">
+            This tab demonstrates a chatbot that can interact with an SQL database containing information on infrastructure projects being implemented in Malawi.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <Radio.Group value={language} onChange={handleLanguageChange}>
-              <Radio value="english">{LANGUAGES.english.label}</Radio>
-              <Radio value="russian">{LANGUAGES.russian.label}</Radio>
-              <Radio value="uzbek">{LANGUAGES.uzbek.label}</Radio>
+              <Radio.Button value="english">English</Radio.Button>
+              <Radio.Button value="russian">Русский</Radio.Button>
+              <Radio.Button value="uzbek">O'zbek</Radio.Button>
             </Radio.Group>
-          </div>
-        </div>
-
-        <div
-          ref={chatContainerRef}
-          className="chat-messages"
-          style={{
-            height: 'calc(100vh - 300px)',
-            overflowY: 'auto',
-            marginBottom: '20px',
-            padding: '20px',
-            backgroundColor: '#f5f5f5',
-            borderRadius: '8px',
-          }}
-        >
-          <List
-            dataSource={chatHistory}
-            renderItem={renderMessage}
-          />
-          {isTyping && (
-            <div className="typing-indicator">
-              <Spin size="small" /> {LANGUAGES[language].typing}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Text>Use LLM</Text>
+              <Switch checked={useLLM} onChange={setUseLLM} />
             </div>
-          )}
-        </div>
-
-        <div style={{ marginTop: '20px', marginBottom: '20px' }}>
-          <Text strong>{LANGUAGES[language].suggested}</Text>
-          <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
-            {(suggestions.length > 0 ? suggestions : suggestedQuestions[language]).map((question, index) => (
-              <Button
-                key={index}
-                type="default"
-                size="small"
-                style={{ margin: '0 8px 8px 0' }}
-                onClick={() => handleSend(question)}
-              >
-                {question}
-              </Button>
-            ))}
           </div>
-        </div>
 
-        <div style={{ 
-          position: 'sticky',
-          bottom: 0,
-          background: '#fff',
-          padding: '20px 0',
-          borderTop: '1px solid #f0f0f0',
-          marginTop: '20px'
-        }}>
-          <TextArea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={LANGUAGES[language].placeholder}
-            autoSize={{ minRows: 1, maxRows: 4 }}
-            onPressEnter={(e) => {
-              if (!e.shiftKey) {
-                e.preventDefault();
-                handleSend(input);
-              }
+          <div
+            ref={chatContainerRef}
+            className="chat-messages"
+            style={{
+              height: 'calc(100vh - 300px)',
+              overflowY: 'auto',
+              marginBottom: '20px',
+              padding: '20px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '8px',
             }}
-          />
-          <Button
-            type="primary"
-            icon={<SendOutlined />}
-            onClick={() => handleSend(input)}
-            style={{ marginTop: '10px', float: 'right' }}
           >
-            Send
-          </Button>
+            <List
+              dataSource={chatHistory}
+              renderItem={renderMessage}
+            />
+            {isTyping && (
+              <div className="typing-indicator">
+                <Spin size="small" /> {LANGUAGES[language].typing}
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+            <Text strong>{LANGUAGES[language].suggested}</Text>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+              {(suggestions.length > 0 ? suggestions : suggestedQuestions[language]).map((question, index) => (
+                <Button
+                  key={index}
+                  type="default"
+                  size="small"
+                  style={{ margin: '0 8px 8px 0' }}
+                  onClick={() => handleSend(question)}
+                >
+                  {question}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ 
+            position: 'sticky',
+            bottom: 0,
+            background: '#fff',
+            padding: '20px 0',
+            borderTop: '1px solid #f0f0f0',
+            marginTop: '20px'
+          }}>
+            <TextArea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={LANGUAGES[language].placeholder}
+              autoSize={{ minRows: 1, maxRows: 4 }}
+              onPressEnter={(e) => {
+                if (!e.shiftKey) {
+                  e.preventDefault();
+                  handleSend(input);
+                }
+              }}
+            />
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              onClick={() => handleSend(input)}
+              style={{ marginTop: '10px', float: 'right' }}
+            >
+              Send
+            </Button>
+          </div>
         </div>
       </Content>
     </Layout>
