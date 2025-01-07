@@ -35,7 +35,7 @@ const LANGUAGES = {
     error_timeout: "Запрос не отвечен за 60 секунд. Пожалуйста, попробуйте снова.",
     error_general: "Не удалось получить ответ от чат-бота:",
     no_response: "Извините, но у меня недостаточно информации для ответа на этот вопрос. Пожалуйста, попробуйте спросить об инфраструктурных проектах в нашей базе данных.",
-    requires_translation: false
+    requires_translation: true
   },
   uzbek: {
     code: 'uzbek',
@@ -154,6 +154,7 @@ const RAGSQLChatbot = () => {
         body: JSON.stringify({
           message: isShowMore ? lastQuery : message,
           language: LANGUAGES[language].code,
+          translate: LANGUAGES[language].requires_translation,
           session_id: `req-${Date.now()}`,
           page: isShowMore ? currentPage + 1 : 1,
           page_size: 30,
@@ -170,18 +171,37 @@ const RAGSQLChatbot = () => {
 
       const data = await response.json();
       
-      // Format the response based on the data structure
+      // Format the response based on the data structure and language
       let formattedResponse = '';
       
-      if (data.answer) {
-        formattedResponse = formatResponse(data.answer);
-      } else if (data.response) {
-        formattedResponse = formatResponse(data.response);
-      } else if (data.error === 'empty_query') {
-        formattedResponse = LANGUAGES[language].no_response;
-      } else if (!formattedResponse) {
-        // Handle case where no response is available
-        formattedResponse = LANGUAGES[language].no_response;
+      // For non-English languages, prioritize translated responses
+      if (LANGUAGES[language].requires_translation) {
+        if (data.translated_response) {
+          formattedResponse = data.translated_response;
+        } else if (data.response) {
+          formattedResponse = data.response;
+        } else {
+          formattedResponse = LANGUAGES[language].no_response;
+        }
+      } else {
+        // For English, use standard response handling
+        formattedResponse = data.response || LANGUAGES[language].no_response;
+      }
+
+      // Check if this is an out-of-scope query response
+      const isOutOfScope = formattedResponse.includes('I can only answer questions') ||
+                          formattedResponse.includes('Я могу отвечать только на вопросы') ||
+                          formattedResponse.includes('Men faqat savollar') ||
+                          formattedResponse === LANGUAGES[language].no_response;
+
+      // Only format the response if it contains project information and is not an out-of-scope message
+      const isProjectResponse = !isOutOfScope && (
+        formattedResponse.match(/(?:Project|Проект|Loyiha):/i) ||
+        formattedResponse.match(/(?:Location|Местоположение|Joylashuv):/i)
+      );
+
+      if (isProjectResponse) {
+        formattedResponse = formatResponse(formattedResponse);
       }
 
       // Update suggestions if available
@@ -193,15 +213,15 @@ const RAGSQLChatbot = () => {
         text: formattedResponse,
         isUser: false,
         timestamp: new Date().toISOString(),
-        isFormatted: true,
+        isFormatted: isProjectResponse,
         translated: LANGUAGES[language].requires_translation && data.translated,
         original_language: data.original_language,
         suggested_questions: data.suggested_questions,
         metadata: {
-          total_results: data.metadata.total_results,
-          current_page: data.metadata.current_page,
-          total_pages: data.metadata.total_pages,
-          has_more: data.metadata.has_more
+          total_results: data.metadata?.total_results || 0,
+          current_page: data.metadata?.current_page || 1,
+          total_pages: data.metadata?.total_pages || 1,
+          has_more: data.metadata?.has_more || false
         }
       };
 
@@ -240,9 +260,9 @@ const RAGSQLChatbot = () => {
     if (!text) return '';
 
     // Handle multiple projects summary
-    if (text.includes('Found') && text.includes('projects in all sectors')) {
-      const projectCount = text.match(/Found (\d+) projects/);
-      const locationMatch = text.match(/Location:[^]*?(?=Project:|$)/s);
+    if (text.includes('Found') || text.includes('Найдено') || text.includes('Topildi')) {
+      const projectCount = text.match(/(?:Found|Найдено|Topildi) (\d+)/);
+      const locationMatch = text.match(/(?:Location|Местоположение|Joylashuv):[^]*?(?=(?:Project|Проект|Loyiha):|$)/s);
       
       return `
         <div class="projects-summary">
@@ -257,70 +277,48 @@ const RAGSQLChatbot = () => {
                 .join('')}
             </div>
           ` : ''}
-          <div class="show-more-prompt">
-            Type 'show more' to see additional projects
-          </div>
         </div>
       `;
     }
 
     // Handle individual project details
-    const projectSections = text.split('\n\n\n').filter(section => section.trim());
-    if (projectSections.length > 0 && projectSections[0].includes('•')) {
-      return `
-        <div class="project-list">
-          ${projectSections.map(project => {
-            const lines = project.split('\n');
-            const title = lines[0].trim();
-            const details = lines.slice(1)
-              .filter(line => {
-                const lowerLine = line.toLowerCase().trim();
-                return lowerLine.startsWith('project:') || lowerLine.startsWith('location:');
-              })
-              .join('\n');
-            
-            return `
-              <div class="project-item">
-                <div class="project-title">
-                  <a href="#" class="project-link" onclick="window.dispatchEvent(new CustomEvent('projectClick', { detail: '${title}' }))">
-                    ${title}
-                  </a>
-                </div>
-                <div class="project-details">
-                  ${details.split('\n')
-                    .filter(line => line.trim())
-                    .map(line => `<div class="detail-line">${line.trim()}</div>`)
-                    .join('')}
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      `;
-    }
-
-    // Format individual lines with bullet points and statistics
-    const lines = text.split('\n');
+    const lines = text.split('\n').filter(line => line.trim());
     const formattedLines = lines.map(line => {
       line = line.trim();
       if (!line) return '';
       
-      // Only include Project and Location lines
-      const lowerLine = line.toLowerCase();
-      if (!lowerLine.startsWith('project:') && !lowerLine.startsWith('location:')) {
-        return '';
+      // Match project and location lines in all languages
+      const isProjectLine = line.match(/^(Project|Проект|Loyiha):/i);
+      const isLocationLine = line.match(/^(Location|Местоположение|Joylashuv):/i);
+      
+      if (!isProjectLine && !isLocationLine) return '';
+      
+      // Format headers consistently
+      if (isProjectLine) {
+        line = line.replace(/^(Project|Проект|Loyiha):/i, '<strong>Project:</strong>');
       }
-      
-      // Format headers
-      line = line.replace(/^([\w\s]+):/, '<strong>$1:</strong>');
-      
-      // Format bullet points
-      line = line.replace(/^•\s*/, '→ ');
+      if (isLocationLine) {
+        line = line.replace(/^(Location|Местоположение|Joylashuv):/i, '<strong>Location:</strong>');
+      }
       
       return `<div class="response-line">${line}</div>`;
     });
 
-    return formattedLines.filter(line => line).join('');
+    // Group project details together
+    const formattedResponse = formattedLines.filter(line => line);
+    if (formattedResponse.length > 0) {
+      return `
+        <div class="project-list">
+          <div class="project-item">
+            <div class="project-details">
+              ${formattedResponse.join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    return text;
   };
 
   useEffect(() => {
@@ -336,61 +334,36 @@ const RAGSQLChatbot = () => {
   }, [handleSend]);
 
   const renderMessage = (message) => {
-    if (message.isUser) {
-      return (
-        <List.Item key={message.timestamp} className={`message ${message.isUser ? 'user' : 'bot'}`}>
-          <List.Item.Meta
-            title={
-              <div className="message-header">
-                <span className="message-sender">{message.isUser ? 'You' : 'Bot'}</span>
-                <span className="message-time">{new Date(message.timestamp).toLocaleTimeString()}</span>
-              </div>
-            }
-            description={
-              message.isFormatted ? (
-                <div 
-                  className="message-text llm-processed"
-                  dangerouslySetInnerHTML={{ __html: message.text }}
-                />
-              ) : (
-                <div className="message-text">{message.text}</div>
-              )
-            }
-          />
-        </List.Item>
-      );
-    } else {
-      return (
-        <List.Item key={message.timestamp} className={`message ${message.isUser ? 'user' : 'bot'}`}>
-          <List.Item.Meta
-            title={
-              <div className="message-header">
-                <span className="message-sender">{message.isUser ? 'You' : 'Bot'}</span>
-                <span className="message-time">{new Date(message.timestamp).toLocaleTimeString()}</span>
-              </div>
-            }
-            description={
-              message.isFormatted ? (
-                <div 
-                  className="message-text llm-processed"
-                  dangerouslySetInnerHTML={{ __html: message.text }}
-                />
-              ) : (
-                <div className="message-text">{message.text}</div>
-              )
-            }
-          />
-          {message.metadata?.has_more && (
-            <div className="message-footer">
-              <Text type="secondary">
-                Showing {message.metadata.current_page * 30} of {message.metadata.total_results} projects. 
-                Type "show more" to see additional results.
-              </Text>
+    return (
+      <List.Item key={message.timestamp} className={`message ${message.isUser ? 'user' : 'bot'}`}>
+        <List.Item.Meta
+          title={
+            <div className="message-header">
+              <span className="message-sender">{message.isUser ? 'You' : 'Bot'}</span>
+              <span className="message-time">{new Date(message.timestamp).toLocaleTimeString()}</span>
             </div>
-          )}
-        </List.Item>
-      );
-    }
+          }
+          description={
+            message.isFormatted ? (
+              <div 
+                className="message-text llm-processed"
+                dangerouslySetInnerHTML={{ __html: message.text }}
+              />
+            ) : (
+              <div className="message-text">{message.text}</div>
+            )
+          }
+        />
+        {!message.isUser && message.metadata?.has_more && (
+          <div className="message-footer">
+            <Text type="secondary">
+              Showing {message.metadata.current_page * 30} of {message.metadata.total_results} projects. 
+              Type "show more" to see additional results.
+            </Text>
+          </div>
+        )}
+      </List.Item>
+    );
   };
 
   return (
