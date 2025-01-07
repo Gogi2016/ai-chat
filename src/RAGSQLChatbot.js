@@ -256,69 +256,27 @@ const RAGSQLChatbot = () => {
   }, [chatHistory]);
 
   // Add formatResponse function
-  const formatResponse = (text) => {
-    if (!text) return '';
-
-    // Handle multiple projects summary
-    if (text.includes('Found') || text.includes('Найдено') || text.includes('Topildi')) {
-      const projectCount = text.match(/(?:Found|Найдено|Topildi) (\d+)/);
-      const locationMatch = text.match(/(?:Location|Местоположение|Joylashuv):[^]*?(?=(?:Project|Проект|Loyiha):|$)/s);
-      
-      return `
-        <div class="projects-summary">
-          <div class="summary-header">
-            <strong>${projectCount ? projectCount[1] : 'Multiple'} Projects Found</strong>
-          </div>
-          ${locationMatch ? `
-            <div class="status-breakdown">
-              ${locationMatch[0].split('\n')
-                .filter(line => line.trim())
-                .map(line => `<div class="status-item">${line.trim()}</div>`)
-                .join('')}
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }
-
-    // Handle individual project details
-    const lines = text.split('\n').filter(line => line.trim());
-    const formattedLines = lines.map(line => {
-      line = line.trim();
-      if (!line) return '';
-      
-      // Match project and location lines in all languages
-      const isProjectLine = line.match(/^(Project|Проект|Loyiha):/i);
-      const isLocationLine = line.match(/^(Location|Местоположение|Joylashuv):/i);
-      
-      if (!isProjectLine && !isLocationLine) return '';
-      
-      // Format headers consistently
-      if (isProjectLine) {
-        line = line.replace(/^(Project|Проект|Loyiha):/i, '<strong>Project:</strong>');
-      }
-      if (isLocationLine) {
-        line = line.replace(/^(Location|Местоположение|Joylashuv):/i, '<strong>Location:</strong>');
-      }
-      
-      return `<div class="response-line">${line}</div>`;
+  const formatResponse = (response) => {
+    // Split projects by the separator
+    const projects = response.split('---');
+    
+    // Format each project
+    const formattedProjects = projects.map(project => {
+      const lines = project.trim().split('\n');
+      const formattedLines = lines.map(line => {
+        // Check if line starts with Project: or Location:
+        if (line.match(/^(Project|Проект|Loyiha|Location|Местоположение|Joylashuv):/i)) {
+          // Make only the label bold, not the value
+          const [label, ...rest] = line.split(':');
+          return `**${label}:** ${rest.join(':')}`;
+        }
+        return line;
+      });
+      return formattedLines.join('\n');
     });
-
-    // Group project details together
-    const formattedResponse = formattedLines.filter(line => line);
-    if (formattedResponse.length > 0) {
-      return `
-        <div class="project-list">
-          <div class="project-item">
-            <div class="project-details">
-              ${formattedResponse.join('')}
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    return text;
+    
+    // Join projects with a nice separator
+    return formattedProjects.join('\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n');
   };
 
   useEffect(() => {
