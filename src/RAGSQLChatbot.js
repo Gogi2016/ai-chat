@@ -22,7 +22,7 @@ const LANGUAGES = {
     typing: 'Typing...',
     error_timeout: 'Request timed out after 60 seconds. Please try again.',
     error_general: 'Failed to get response from chatbot:',
-    no_response: 'No response received',
+    no_response: 'I apologize, but I do not have enough information to answer this question. Please try asking about infrastructure projects in our database.',
     requires_translation: false
   },
   russian: {
@@ -32,9 +32,9 @@ const LANGUAGES = {
     placeholder: "Спросите об инфраструктурных проектах...",
     suggested: "Предлагаемые вопросы:",
     typing: "Печатает...",
-    error_timeout: "Запрос не о��вечен за 60 секунд. Пожалуйста, попробуйте снова.",
+    error_timeout: "Запрос не отвечен за 60 секунд. Пожалуйста, попробуйте снова.",
     error_general: "Не удалось получить ответ от чат-бота:",
-    no_response: "Ответ не получен",
+    no_response: "Извините, но у меня недостаточно информации для ответа на этот вопрос. Пожалуйста, попробуйте спросить об инфраструктурных проектах в нашей базе данных.",
     requires_translation: false
   },
   uzbek: {
@@ -46,7 +46,7 @@ const LANGUAGES = {
     typing: "Yozmoqda...",
     error_timeout: "So'rov 60 soniyadan keyin tugadi. Iltimos, qayta urinib ko'ring.",
     error_general: "Chatbotdan javob olishda xatolik yuz berdi:",
-    no_response: "Javob olishda xatolik yuz berdi",
+    no_response: "Kechirasiz, lekin bu savolga javob berish uchun yetarli ma'lumot yo'q. Iltimos, bizning ma'lumotlar bazamizdagi infratuzilma loyihalari haqida so'rang.",
     requires_translation: true
   }
 };
@@ -69,7 +69,7 @@ const suggestedQuestions = {
     "Show projects in Southern Region"
   ],
   russian: [
-    "Покажите все инфраструк��урные проекты",
+    "Покажите все инфраструктурные проекты",
     "Покажите проекты по местоположению",
     "Покажите проекты в Северном регионе",
     "Покажите проекты в Центральном регионе",
@@ -177,6 +177,11 @@ const RAGSQLChatbot = () => {
         formattedResponse = formatResponse(data.answer);
       } else if (data.response) {
         formattedResponse = formatResponse(data.response);
+      } else if (data.error === 'empty_query') {
+        formattedResponse = LANGUAGES[language].no_response;
+      } else if (!formattedResponse) {
+        // Handle case where no response is available
+        formattedResponse = LANGUAGES[language].no_response;
       }
 
       // Update suggestions if available
