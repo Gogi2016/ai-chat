@@ -196,12 +196,12 @@ const RAGSQLChatbot = () => {
 
       // Only format the response if it contains project information and is not an out-of-scope message
       const isProjectResponse = !isOutOfScope && (
-        formattedResponse.match(/(?:Project|Проект|Loyiha):/i) ||
-        formattedResponse.match(/(?:Location|Местоположение|Joylashuv):/i)
+        formattedResponse.includes(':')
       );
 
       if (isProjectResponse) {
-        formattedResponse = formatResponse(formattedResponse);
+        // Keep the response as is to preserve translated labels
+        formattedResponse = formattedResponse.trim();
       }
 
       // Update suggestions if available
